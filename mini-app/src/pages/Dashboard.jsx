@@ -5,7 +5,6 @@ import BottomNav from "../components/BottomNav";
 import { publicApi } from '../components/Api';
 const withdrawThreshold = 50;
 
-
 export default function Dashboard() {
   const [copied, setCopied] = useState(false);
   const [user, setUser] = useState([]);
@@ -13,25 +12,31 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const tg = window.Telegram?.WebApp;
+
+    if (tg) {
+      tg.expand(); // Try to expand immediately
+
+      // Some openings block fullscreen initially, so repeat for a short interval
+      const interval = setInterval(() => tg.expand(), 500);
+      setTimeout(() => clearInterval(interval), 3000);
+
+      // Optional: hide main Telegram button to remove padding
+      tg.MainButton.hide();
+    }
+
     const loadUser = async () => {
       try {
-        const tg = window.Telegram?.WebApp;
-         if (!tg || !tg.initDataUnsafe?.user) {
-           throw new Error("Telegram WebApp user data not found");
-         }
-         
-         tg.expand()
+        if (!tg || !tg.initDataUnsafe?.user) {
+          throw new Error("Telegram WebApp user data not found");
+        }
 
-         const telegramUser = tg.initDataUnsafe.user;
-         const userId = telegramUser.id;
-         const name = telegramUser.first_name;
+        const telegramUser = tg.initDataUnsafe.user;
+        const userId = telegramUser.id;
+        const name = telegramUser.first_name;
 
         // Send user info to backend
-        const res = await publicApi.post("/api/user/sync", {
-          id: userId,
-          name,
-        });
-
+        const res = await publicApi.post("/api/user/sync", { id: userId, name });
         setUser(res.data.user);
       } catch (err) {
         console.error("❌ Error loading user:", err);
@@ -90,7 +95,6 @@ export default function Dashboard() {
         className="mt-8 bg-[#1A1A1A] rounded-3xl p-6 border border-[#5B2EFF]/20 shadow-[0_0_25px_rgba(162,89,255,0.15)] relative overflow-hidden"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-[#5B2EFF]/10 to-transparent"></div>
-
         <p className="text-[#BFBFBF] mb-2 text-center font-medium">Your Balance</p>
         <h2 className="text-5xl font-bold text-center text-[#A259FF] tracking-wide">
           ${(user.referral_count - user.claimed_referral_count) * 0.4}
@@ -139,13 +143,16 @@ export default function Dashboard() {
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className={`w-full mt-8 py-4 rounded-3xl font-semibold text-white ${(user.referral_count - user.claimed_referral_count) * 0.4 >= 50
-          ? "bg-gradient-to-r from-[#A259FF] to-[#5B2EFF] shadow-[0_0_30px_rgba(162,89,255,0.5)] hover:opacity-90"
-          : "bg-[#0D0D0D] border border-[#1A1A1A] text-[#808080] cursor-not-allowed"
-          } transition-all duration-300`}
+        className={`w-full mt-8 py-4 rounded-3xl font-semibold text-white ${
+          (user.referral_count - user.claimed_referral_count) * 0.4 >= 50
+            ? "bg-gradient-to-r from-[#A259FF] to-[#5B2EFF] shadow-[0_0_30px_rgba(162,89,255,0.5)] hover:opacity-90"
+            : "bg-[#0D0D0D] border border-[#1A1A1A] text-[#808080] cursor-not-allowed"
+        } transition-all duration-300`}
         disabled={(user.referral_count - user.claimed_referral_count) * 0.4 < 50}
       >
-        {(user.referral_count - user.claimed_referral_count) * 0.4 >= 50 ? "Withdraw Now" : "Keep Referring to Withdraw"}
+        {(user.referral_count - user.claimed_referral_count) * 0.4 >= 50
+          ? "Withdraw Now"
+          : "Keep Referring to Withdraw"}
       </motion.button>
 
       {/* Stats Section */}
