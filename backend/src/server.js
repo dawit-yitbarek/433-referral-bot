@@ -3,7 +3,8 @@ import cors from 'cors';
 import userRoutes from './routes/userRoutes.js';
 import { WEBAPP_URL } from './config/env.js';
 
-const app = express()app.use((req, res, next) => {
+const app = express();
+app.use((req, res, next) => {
   // Skip logging for Render's health checks
   if (req.url === '/health' || req.url === '/') return next();
 
