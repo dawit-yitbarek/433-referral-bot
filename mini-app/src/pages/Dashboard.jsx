@@ -19,6 +19,8 @@ export default function Dashboard() {
          if (!tg || !tg.initDataUnsafe?.user) {
            throw new Error("Telegram WebApp user data not found");
          }
+         
+         tg.expand()
 
          const telegramUser = tg.initDataUnsafe.user;
          const userId = telegramUser.id;
