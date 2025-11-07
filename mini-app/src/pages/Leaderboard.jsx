@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import BottomNav from "../components/BottomNav";
+import { publicApi } from '../components/Api';
 
 export default function Leaderboard() {
     const [loading, setLoading] = useState(true);
