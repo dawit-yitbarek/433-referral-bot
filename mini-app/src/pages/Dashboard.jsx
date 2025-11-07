@@ -26,7 +26,7 @@ export default function Dashboard() {
 
         // Send user info to backend
         const res = await publicApi.post("/api/user/sync", {
-          id: user,
+          id: userId,
           name,
         });
 

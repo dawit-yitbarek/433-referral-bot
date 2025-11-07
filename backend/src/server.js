@@ -5,14 +5,7 @@ import { WEBAPP_URL } from './config/env.js';
 
 const app = express()
 app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || origin === WEBAPP_URL) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: false,
+  origin: "*",
 }));
 
 app.use(express.json())
