@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { FaCopy } from "react-icons/fa";
 import { motion } from "framer-motion";
 import BottomNav from "../components/BottomNav";
+import ErrorState from "../components/Error";
+import LoadingState from "../components/Loading";
 import { publicApi } from '../components/Api';
 const withdrawThreshold = 50;
 
@@ -10,20 +12,10 @@ export default function Dashboard() {
   const [user, setUser] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refresh, setRefresh] = useState(0)
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
-
-    if (tg) {
-      tg.expand(); // Try to expand immediately
-
-      // Some openings block fullscreen initially, so repeat for a short interval
-      const interval = setInterval(() => tg.expand(), 500);
-      setTimeout(() => clearInterval(interval), 3000);
-
-      // Optional: hide main Telegram button to remove padding
-      tg.MainButton.hide();
-    }
 
     const loadUser = async () => {
       try {
@@ -56,21 +48,13 @@ export default function Dashboard() {
   };
 
   const progress = Math.min((user.referral_count - user.claimed_referral_count) / withdrawThreshold * 100, 100);
+  
+if (loading) {
+  return <LoadingState message={"Loading your dashboard"}/>
+}
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#000000] text-white font-poppins">
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#000000] text-white font-poppins">
-        <p>Error loading user data: {error}</p>
-      </div>
-    );
+if (error) {
+    return <ErrorState retry={() => setRefresh(prev => prev + 1)}/>
   }
 
   return (
@@ -97,10 +81,10 @@ export default function Dashboard() {
         <div className="absolute inset-0 bg-gradient-to-br from-[#5B2EFF]/10 to-transparent"></div>
         <p className="text-[#BFBFBF] mb-2 text-center font-medium">Your Balance</p>
         <h2 className="text-5xl font-bold text-center text-[#A259FF] tracking-wide">
-          ${(user.referral_count - user.claimed_referral_count) * 0.4}
+          {(user.referral_count - user.claimed_referral_count) * 0.4} BIRR
         </h2>
         <p className="mt-2 text-sm text-center text-[#808080]">
-          Withdraw at <span className="text-[#CBA6F7] font-semibold">$50</span>
+          Withdraw at <span className="text-[#CBA6F7] font-semibold">50 BIRR</span>
         </p>
 
         {/* Progress Bar */}
@@ -164,7 +148,7 @@ export default function Dashboard() {
         <div className="bg-[#1A1A1A] p-4 rounded-3xl text-center border border-[#5B2EFF]/20 shadow-[0_0_15px_rgba(162,89,255,0.1)]">
           <p className="text-sm text-[#BFBFBF]">Referral Earnings</p>
           <p className="text-2xl font-bold text-[#A259FF]">
-            ${(user.referral_count * 0.4).toFixed(2)}
+            {(user.claimed_referral_count * 0.4).toFixed(2)} BIRR
           </p>
         </div>
       </div>

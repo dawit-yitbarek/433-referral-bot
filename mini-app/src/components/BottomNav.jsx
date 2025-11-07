@@ -1,4 +1,4 @@
-import { FaHome, FaMedal, FaWallet, FaTrophy } from 'react-icons/fa';
+import { FaHome, FaWallet, FaTrophy } from 'react-icons/fa';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
