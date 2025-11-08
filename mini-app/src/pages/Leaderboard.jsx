@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import LoadingState from "../components/Loading";
 import ErrorState from "../components/Error";
 import { publicApi } from "../components/Api";
@@ -60,10 +60,10 @@ export default function Leaderboard() {
                 <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-6xl px-2">
                     {topThree.map((user) => (
                         <article
-                            key={user.telegram_id}
+                            key={Number(user.telegram_id)}
                             className={`w-full h-64 rounded-xl flex flex-col items-center justify-center px-4 py-6 bg-[#1a1a2e] text-center
-                    ${user.rank === 1 ? "sm:col-span-2 md:col-span-1 order-1" : "order-2"}
-                    ${user.telegram_id === telegramId ? "ring-2 ring-[#A259FF] shadow-[0_0_15px_rgba(162,89,255,0.3)]" : ""}`}
+                    ${Number(user.rank) === 1 ? "sm:col-span-2 md:col-span-1 order-1" : "order-2"}
+                    ${Number(user.telegram_id) === telegramId ? "ring-2 ring-[#A259FF] shadow-[0_0_15px_rgba(162,89,255,0.3)]" : ""}`}
                         >
                             <div className="w-20 h-20 rounded-full overflow-hidden mb-3 border-4 border-[#5B2EFF]">
                                 <img
@@ -74,7 +74,7 @@ export default function Leaderboard() {
                             </div>
                             <div className="font-bold text-white text-base sm:text-lg truncate flex items-center justify-center gap-1">
                                 {user.name}
-                                {user.telegram_id === telegramId && (
+                                {Number(user.telegram_id) === telegramId && (
                                     <span className="text-xs text-purple-400 font-semibold">(You)</span>
                                 )}
                             </div>
@@ -82,7 +82,7 @@ export default function Leaderboard() {
                                 {user.referral_count.toLocaleString()} rfs
                             </div>
                             <div className="text-sm text-gray-400 mt-1">
-                                {user.rank === 1 ? "1st" : user.rank === 2 ? "2nd" : "3rd"}
+                                {(Number(user.rank)) === 1 ? "1st" : (Number(user.rank)) === 2 ? "2nd" : "3rd"}
                             </div>
                         </article>
                     ))}
@@ -95,7 +95,7 @@ export default function Leaderboard() {
                             key={user.telegram_id}
                             className={`flex justify-between items-center px-2 sm:px-6 py-4 text-sm sm:text-base rounded-lg transition-all duration-200
 
-${user.telegram_id === telegramId ? "ring-2 ring-[#A259FF] bg-[#2a2a3e]" : ""}`}
+${Number(user.telegram_id) === telegramId ? "ring-2 ring-[#A259FF] bg-[#2a2a3e]" : ""}`}
                         >
                             <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
                                 <span className="text-gray-400 w-5 sm:w-6 text-right">{user.rank}</span>
@@ -106,7 +106,7 @@ ${user.telegram_id === telegramId ? "ring-2 ring-[#A259FF] bg-[#2a2a3e]" : ""}`}
                                 />
                                 <span className="font-semibold text-white truncate flex items-center gap-1">
                                     {user.name}
-                                    {user.telegram_id === telegramId && (
+                                    {Number(user.telegram_id) === telegramId && (
                                         <span className="text-xs text-purple-400 font-semibold">(You)</span>
                                     )}
                                 </span>
