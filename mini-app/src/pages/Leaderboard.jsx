@@ -60,10 +60,10 @@ export default function Leaderboard() {
                 <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-6xl px-2">
                     {topThree.map((user) => (
                         <article
-                            key={user.id}
+                            key={user.telegram_id}
                             className={`w-full h-64 rounded-xl flex flex-col items-center justify-center px-4 py-6 bg-[#1a1a2e] text-center
                     ${user.rank === 1 ? "sm:col-span-2 md:col-span-1 order-1" : "order-2"}
-                    ${user.id === telegramId ? "ring-2 ring-[#A259FF] shadow-[0_0_15px_rgba(162,89,255,0.3)]" : ""}`}
+                    ${user.telegram_id === telegramId ? "ring-2 ring-[#A259FF] shadow-[0_0_15px_rgba(162,89,255,0.3)]" : ""}`}
                         >
                             <div className="w-20 h-20 rounded-full overflow-hidden mb-3 border-4 border-[#5B2EFF]">
                                 <img
@@ -74,7 +74,7 @@ export default function Leaderboard() {
                             </div>
                             <div className="font-bold text-white text-base sm:text-lg truncate flex items-center justify-center gap-1">
                                 {user.name}
-                                {user.id === telegramId && (
+                                {user.telegram_id === telegramId && (
                                     <span className="text-xs text-purple-400 font-semibold">(You)</span>
                                 )}
                             </div>
@@ -92,10 +92,10 @@ export default function Leaderboard() {
                 <section className="bg-[#1a1a2e] w-full max-w-6xl rounded-xl py-4 divide-y divide-[#292947] px-2">
                     {others.map((user) => (
                         <article
-                            key={user.id}
+                            key={user.telegram_id}
                             className={`flex justify-between items-center px-2 sm:px-6 py-4 text-sm sm:text-base rounded-lg transition-all duration-200
 
-${user.id === telegramId ? "ring-2 ring-[#A259FF] bg-[#2a2a3e]" : ""}`}
+${user.telegram_id === telegramId ? "ring-2 ring-[#A259FF] bg-[#2a2a3e]" : ""}`}
                         >
                             <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
                                 <span className="text-gray-400 w-5 sm:w-6 text-right">{user.rank}</span>
@@ -106,7 +106,7 @@ ${user.id === telegramId ? "ring-2 ring-[#A259FF] bg-[#2a2a3e]" : ""}`}
                                 />
                                 <span className="font-semibold text-white truncate flex items-center gap-1">
                                     {user.name}
-                                    {user.id === telegramId && (
+                                    {user.telegram_id === telegramId && (
                                         <span className="text-xs text-purple-400 font-semibold">(You)</span>
                                     )}
                                 </span>
