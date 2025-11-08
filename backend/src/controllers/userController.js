@@ -7,7 +7,7 @@ const bot = new Telegraf(BOT_TOKEN);
 export const getUserDashboard = async (req, res) => {
     try {
         const { id: telegramId, name } = req.body;
-        if (!telegramId) return res.status(400).json({ error: 'Missing id' });
+        if (!telegramId) return res.status(400).json({ error: "Missing id" });
 
         // 1️⃣ Fetch profile picture from Telegram
         let profilePicture = null;
@@ -19,29 +19,45 @@ export const getUserDashboard = async (req, res) => {
                 profilePicture = `https://api.telegram.org/file/bot${BOT_TOKEN}/${file.file_path}`;
             }
         } catch (err) {
-            console.warn(`⚠️ Could not fetch profile picture for ${telegramId}:`, err.message);
+            console.warn(`⚠️ Could not fetch profile picture for ${telegramId}:, err.message`);
         }
 
-        // 2️⃣ Upsert (insert or update if user exists)
-        const query = `
+        // 2️⃣ Upsert user (insert or update)
+        const userQuery = `
       INSERT INTO users (telegram_id, name, profile_photo)
       VALUES ($1, $2, $3)
       ON CONFLICT (telegram_id)
       DO UPDATE SET
         name = EXCLUDED.name,
         profile_photo = EXCLUDED.profile_photo
-      RETURNING telegram_id, name, referral_count, profile_photo, claimed_referral_count;
-    `;
-
-        const { rows } = await pool.query(query, [telegramId, name, profilePicture]);
+      RETURNING id, telegram_id, name, referral_count, profile_photo, claimed_referral_count`;
+        ;
+        const { rows } = await pool.query(userQuery, [telegramId, name, profilePicture]);
         const user = rows[0];
 
-        console.log(`✅ User data: `, user);
-        // ✅ Return success
-        return res.status(200).json({ user });
 
+        // Pending referrals = sum of pending withdrawals
+        const pendingResult = await pool.query('SELECT COALESCE(SUM(requested_referrals), 0) AS pending_referrals FROM withdrawal_requests WHERE user_id = $1 AND status = $2', [user.id, 'pending']);
+        const pending_referrals = parseInt(pendingResult.rows[0].pending_referrals, 10);
+
+        // Compute unclaimed referrals
+        const total_referrals = user.referral_count;
+        const claimed_referrals = user.claimed_referral_count;
+        const unclaimed_referrals = total_referrals - claimed_referrals - pending_referrals;
+
+        // 4️⃣ Return merged user + referral summary
+        const responseUser = {
+            telegram_id: user.telegram_id,
+            name: user.name,
+            profile_photo: user.profile_photo,
+            total_referrals,
+            claimed_referrals,
+            unclaimed_referrals
+        };
+
+        return res.status(200).json({ user: responseUser });
     } catch (error) {
-        console.error('❌ Error fetching user dashboard:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        console.error("❌ Error fetching user dashboard:", error);
+        return res.status(500).json({ message: "Internal server error" });
     }
 };
