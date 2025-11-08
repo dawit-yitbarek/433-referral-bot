@@ -9,13 +9,14 @@ const withdrawThreshold = 50;
 
 export default function Dashboard() {
   const [copied, setCopied] = useState(false);
-  const [user, setUser] = useState([]);
+  const [user, setUser] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refresh, setRefresh] = useState(0)
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
+    setLoading(true)
 
     const loadUser = async () => {
       try {
@@ -39,7 +40,7 @@ export default function Dashboard() {
     };
 
     loadUser();
-  }, []);
+  }, [refresh]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(`https://t.me/Testreferral_bot?start=${user.telegram_id}`);
@@ -153,7 +154,7 @@ if (error) {
         </div>
       </div>
 
-      <BottomNav />
+      {/* <BottomNav /> */}
     </div>
   );
 }

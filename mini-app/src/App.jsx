@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Leaderboard from './pages/Leaderboard';
 import Withdraw from './pages/Withdraw';
+import BottomNav from './components/BottomNav';
 
 const AppContent = () => {
 
@@ -14,6 +15,7 @@ const AppContent = () => {
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/withdraw" element={<Withdraw />} />
       </Routes>
+      <BottomNav />
     </>
   );
 };
