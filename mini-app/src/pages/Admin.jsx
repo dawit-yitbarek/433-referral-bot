@@ -32,9 +32,8 @@ export default function AdminPage() {
 
     // ✅ Initialize admin from Telegram WebApp
     useEffect(() => {
-        // const tg = window.Telegram?.WebApp;
-        // const username = tg?.initDataUnsafe?.user?.username;
-        const username = "admin1"
+        const tg = window.Telegram?.WebApp;
+        const username = tg?.initDataUnsafe?.user?.username;
 
         if (!username) {
             setError("Telegram WebApp user not found.");
