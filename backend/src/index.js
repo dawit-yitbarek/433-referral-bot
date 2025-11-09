@@ -1,13 +1,13 @@
 import app from './server.js';
 import bot from './bot/webhookHandler.js';
-import { PORT, WEBAPP_URL } from './config/env.js';
+import { PORT, BACKEND_URL } from './config/env.js';
 
 app.listen(PORT, () => console.log(`🌐 Server running on port ${PORT}`));
 
 // Set Telegram webhook once at startup
 (async () => {
     try {
-        const webhookUrl = `${WEBAPP_URL}/webhook`;
+        const webhookUrl = `${BACKEND_URL}/webhook`;
         await bot.telegram.setWebhook(webhookUrl);
         console.log(`✅ Webhook set at ${webhookUrl}`);
     } catch (err) {
