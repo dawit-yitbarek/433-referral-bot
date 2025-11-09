@@ -50,7 +50,7 @@ export default function Dashboard() {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const progress = Math.min(user.unclaimed_referrals / withdrawThreshold * 100, 100);
+  const progress = Math.min(((user.unclaimed_referrals * 0.4) / withdrawThreshold) * 100, 100);
 
   if (loading) {
     return <LoadingState message={"Loading your dashboard"} />
