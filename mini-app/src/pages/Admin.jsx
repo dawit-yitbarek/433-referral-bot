@@ -70,7 +70,7 @@ export default function AdminPage() {
     if (error) return <ErrorState retry={() => fetchWithdrawals(adminUsername)} />;
 
     return (
-        <div className={`border border-greeen-500 min-h-screen bg-[#000000] text-white pb-28 px-4 font-sans relative overflow-hidden ${alert ? "pt-16" : "pt-6"}`}>
+        <div className={`min-h-screen bg-[#000000] text-white pb-28 px-4 font-sans relative overflow-hidden ${alert ? "pt-16" : "pt-6"}`}>
             {/* ✅ Floating alert */}
             <AnimatePresence>
                 {alert && (
