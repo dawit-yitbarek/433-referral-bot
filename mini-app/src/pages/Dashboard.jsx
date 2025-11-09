@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import ErrorState from "../components/Error";
 import LoadingState from "../components/Loading";
 import { publicApi } from '../components/Api';
+import JoinChannelBlocker from '../components/JoinChannelBlocker';
 const withdrawThreshold = 50;
 
 export default function Dashboard() {
@@ -58,6 +59,7 @@ export default function Dashboard() {
   if (error) {
     return <ErrorState retry={() => setRefresh(prev => prev + 1)} />
   }
+
 
   return (
     <div className="min-h-screen bg-[#000000] text-white pb-28 px-4 font-poppins relative overflow-hidden">
@@ -154,6 +156,13 @@ export default function Dashboard() {
           </p>
         </div>
       </div>
+
+      {!user.hasJoined && (
+        <JoinChannelBlocker
+          channelLink="https://t.me/testing_refferal"
+          onReload={() => setRefresh(prev => prev + 1)}
+        />
+      )}
     </div>
   );
 }

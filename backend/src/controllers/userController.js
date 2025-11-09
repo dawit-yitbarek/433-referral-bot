@@ -1,6 +1,7 @@
 import { Telegraf } from 'telegraf';
 import { pool } from '../config/db.js';
 import { BOT_TOKEN } from '../config/env.js';
+const CHANNEL_ID = '@testing_refferal';
 
 const bot = new Telegraf(BOT_TOKEN);
 
@@ -9,7 +10,17 @@ export const getUserDashboard = async (req, res) => {
         const { id: telegramId, name } = req.body;
         if (!telegramId) return res.status(400).json({ error: "Missing id" });
 
-        // 1️⃣ Fetch profile picture from Telegram
+        // 1️⃣ Check if user is a member of the Telegram channel
+        let hasJoined = false;
+        try {
+            const member = await bot.telegram.getChatMember(CHANNEL_ID, telegramId);
+            const status = member.status;
+            hasJoined = ["creator", "administrator", "member"].includes(status);
+        } catch (err) {
+            console.warn(`⚠️ Failed to verify channel membership for ${telegramId}: ${err.message}`);
+        }
+
+        // 2️⃣ Fetch profile picture from Telegram
         let profilePicture = null;
         try {
             const photos = await bot.telegram.getUserProfilePhotos(telegramId, 0, 1);
@@ -22,7 +33,7 @@ export const getUserDashboard = async (req, res) => {
             console.warn(`⚠️ Could not fetch profile picture for ${telegramId}:, err.message`);
         }
 
-        // 2️⃣ Upsert user (insert or update)
+        // 3️⃣ Upsert user (insert or update)
         const userQuery = `
       INSERT INTO users (telegram_id, name, profile_photo)
       VALUES ($1, $2, $3)
@@ -53,7 +64,8 @@ export const getUserDashboard = async (req, res) => {
             profile_photo: user.profile_photo,
             total_referrals,
             claimed_referrals,
-            unclaimed_referrals
+            unclaimed_referrals,
+            hasJoined
         };
 
         return res.status(200).json({ user: responseUser });
