@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, XCircle, Copy, Check } from "lucide-react";
 import { publicApi } from "../components/Api";
 import LoadingState from "../components/Loading";
 import ErrorState from "../components/Error";
@@ -12,6 +12,7 @@ export default function AdminPage() {
     const [error, setError] = useState(null);
     const [processingId, setProcessingId] = useState(null);
     const [alert, setAlert] = useState();
+    const [copiedId, setCopiedId] = useState(null);
 
     // ✅ Fetch withdrawals
     const fetchWithdrawals = async (username) => {
@@ -19,6 +20,7 @@ export default function AdminPage() {
         try {
             const res = await publicApi.get(`/api/withdrawals/admin?username=${username}`);
             setWithdrawals(res.data.withdrawals);
+            console.log('Withdrawals: ', withdrawals)
             setError(null);
         } catch (err) {
             console.error("Error fetching withdrawals:", err);
@@ -30,8 +32,9 @@ export default function AdminPage() {
 
     // ✅ Initialize admin from Telegram WebApp
     useEffect(() => {
-        const tg = window.Telegram?.WebApp;
-        const username = tg?.initDataUnsafe?.user?.username;
+        // const tg = window.Telegram?.WebApp;
+        // const username = tg?.initDataUnsafe?.user?.username;
+        const username = "admin1"
 
         if (!username) {
             setError("Telegram WebApp user not found.");
@@ -64,6 +67,16 @@ export default function AdminPage() {
     const showAlert = (type) => {
         setAlert(type);
         setTimeout(() => setAlert(), 4000); // Hide after 4s
+    };
+
+    const handleCopy = async (id, text) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopiedId(id);
+            setTimeout(() => setCopiedId(null), 1500); // Reset after 1.5s
+        } catch (err) {
+            console.error("Failed to copy:", err);
+        }
     };
 
     if (loading) return <LoadingState message="Loading assigned withdrawals..." />;
@@ -117,17 +130,27 @@ export default function AdminPage() {
                             >
                                 <div>
                                     <p className="text-white font-semibold">
-
-                                        David, [11/9/2025 1:56 PM]
                                         {Number(item.requested_amount).toFixed(2)} BIRR
                                     </p>
-                                    <p className="text-gray-400 text-sm">
-                                        {item.name} | {item.bank_name} | {item.bank_account}
+                                    <p className="text-gray-400 text-sm flex items-center gap-2">
+                                        {item.name} | {item.bank_name} |{" "}
+                                        <span className="font-mono">{item.bank_account}</span>
+                                        <button
+                                            onClick={() => handleCopy(item.id, item.bank_account)}
+                                            className="text-gray-400 hover:text-[#A259FF] transition"
+                                        >
+                                            {copiedId === item.id ? (
+                                                <Check className="w-4 h-4 text-green-400 transition-transform duration-300" />
+                                            ) : (
+                                                <Copy className="w-4 h-4" />
+                                            )}
+                                        </button>
                                     </p>
                                     {item.phone && (
                                         <p className="text-gray-400 text-sm">Phone: {item.phone}</p>
                                     )}
                                 </div>
+
                                 <button
                                     onClick={() => handleProcess(item.id, item.user_id)}
                                     disabled={processingId === item.id}
@@ -136,11 +159,10 @@ export default function AdminPage() {
                                         : "bg-green-500 hover:bg-green-600"
                                         }`}
                                 >
-                                    {processingId === item.id ? "Processing..." : "Mark as Paid"}
+                                    {processingId === item.id ? "Confirming..." : "Confirm"}
                                 </button>
                             </motion.div>
-                        ))
-                        }
+                        ))}
                     </div >
                 )
             }
