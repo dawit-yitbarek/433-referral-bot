@@ -176,10 +176,3 @@ process.on('unhandledRejection', (err) => {
 process.on('uncaughtException', (err) => {
     console.error('🚨 Uncaught Exception:', err.message);
 });
-
-
-bot.launch().then(() => {
-    console.log(`🤖 Bot running... Bot @${botUsername} launched successfully!`);
-}).catch((err) => {
-    console.error('❌ Failed to launch bot:', err);
-});
