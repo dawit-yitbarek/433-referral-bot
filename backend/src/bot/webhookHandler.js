@@ -1,8 +1,4 @@
-import { Telegraf } from 'telegraf';
-import { BOT_TOKEN } from '../config/env.js';
-import './bot.js';
-
-const bot = new Telegraf(BOT_TOKEN);
+import { bot } from './bot.js'
 
 export const handleTelegramUpdate = async (req, res) => {
     try {

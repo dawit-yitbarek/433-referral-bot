@@ -2,7 +2,7 @@ import { Telegraf, Markup } from 'telegraf';
 import { pool } from '../config/db.js';
 import { BOT_TOKEN, WEBAPP_URL } from '../config/env.js';
 
-const bot = new Telegraf(BOT_TOKEN);
+export const bot = new Telegraf(BOT_TOKEN);
 const CHANNEL_ID = '@testing_refferal';
 const botUsername = 'Testreferral_bot';
 
