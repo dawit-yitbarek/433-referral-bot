@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import Leaderboard from './pages/Leaderboard';
 import Withdraw from './pages/Withdraw';
 import BottomNav from './components/BottomNav';
+import AdminPage from './pages/Admin';
 
 const AppContent = () => {
 
@@ -14,6 +15,7 @@ const AppContent = () => {
         <Route path="/" element={<Dashboard />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/withdraw" element={<Withdraw />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Routes>
       <BottomNav />
     </>

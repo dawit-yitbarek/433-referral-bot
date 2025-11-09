@@ -5,5 +5,6 @@ export const {
   BOT_TOKEN,
   WEBAPP_URL,
   DATABASE_URL,
-  PORT
+  PORT,
+  ADMINS,
 } = process.env;

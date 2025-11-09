@@ -88,12 +88,12 @@ export default function Withdraw() {
                 setShowModal(false);
                 setForm({ name: "", bank_name: "", bank_account: "", phone: "" });
                 setMessage({ text: "", type: "" })
+                setSubmitting(false);
                 setRefresh((prev) => prev + 1);
             }, 2000);
         } catch (err) {
             console.error(err);
             setMessage({ text: "Error submitting withdrawal request.", type: "error" });
-        } finally {
             setSubmitting(false);
         }
     };
@@ -152,7 +152,7 @@ export default function Withdraw() {
                                         {Number(item.requested_amount).toFixed(2)} BIRR
                                     </p>
                                     <p className="text-gray-400 text-sm">
-                                        {new Date(item.created_at).toLocaleDateString()}
+                                        {new Date(item.processed_at || item.created_at).toLocaleDateString()}
                                     </p>
                                 </div>
                                 <span
