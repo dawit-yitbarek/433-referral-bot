@@ -2,8 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import userRoutes from './routes/userRoutes.js';
 import leaderboardRoutes from './routes/leaderboardRoutes.js';
+import withdrawRoutes from './routes/withdrawRoutes.js';
 import { WEBAPP_URL } from './config/env.js';
-console.log(`webapp url ${WEBAPP_URL}`)
 
 const app = express();
 app.use(cors({
@@ -21,6 +21,7 @@ app.use(express.json())
 
 app.use('/api/user', userRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/withdrawals', withdrawRoutes);
 app.get('/health', (req, res) => res.send('OK'))
 
 export default app

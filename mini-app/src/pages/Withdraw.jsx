@@ -1,29 +1,112 @@
-import BottomNav from '../components/BottomNav';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import LoadingState from "../components/Loading";
+import ErrorState from "../components/Error";
+import { publicApi } from "../components/Api";
+import { CheckCircle, XCircle } from "lucide-react";
 
 export default function Withdraw() {
-    const balance = 0; // Current balance
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [withdrawHistory, setWithdrawHistory] = useState([]);
+    const [showModal, setShowModal] = useState(false);
+    const [refresh, setRefresh] = useState(0);
+    const [message, setMessage] = useState({ text: "", type: "" });
+
+    const [form, setForm] = useState({
+        name: "",
+        bank_name: "",
+        bank_account: "",
+        phone: "",
+    });
+
+    const [submitting, setSubmitting] = useState(false);
     const minWithdraw = 50; // Minimum required to withdraw
 
-    // Template withdrawal history
-    const history = [
-        { id: 1, amount: 5, status: "Paid", date: "2025-11-01" },
-        { id: 2, amount: 10, status: "Pending", date: "2025-11-03" },
-        { id: 3, amount: 7.5, status: "Paid", date: "2025-11-05" },
-        { id: 4, amount: 3, status: "Pending", date: "2025-11-06" },
-    ];
+    // ✅ Load user and withdrawal history
+    useEffect(() => {
+        const loadUserData = async () => {
+            setLoading(true)
+            try {
+                const tg = window.Telegram?.WebApp;
+                if (!tg?.initDataUnsafe?.user) throw new Error("Telegram WebApp user data not found");
 
-    // Progress toward minimum withdraw
+                const telegramId = tg.initDataUnsafe.user.id;
+                const name = tg.initDataUnsafe.user.first_name || "User";
+
+                const res = await publicApi.post("/api/user/sync", { id: telegramId, name });
+                setUser(res.data.user);
+
+                const historyRes = await publicApi.get(`/api/withdrawals?user_id=${res.data.user.id}`);
+                setWithdrawHistory(historyRes.data.withdrawals);
+            } catch (err) {
+                console.error(err);
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadUserData();
+    }, [refresh]);
+
+    if (loading) return <LoadingState message="Loading withdraw page..." />;
+    if (error) return <ErrorState retry={() => setRefresh((prev) => prev + 1)} />;
+
+    const balance = parseFloat(user.unclaimed_referrals * 0.4 || 0);
     const progress = Math.min((balance / minWithdraw) * 100, 100);
 
+    const handleChange = (e) => {
+        setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+
+    const handleWithdraw = async () => {
+        // ✅ Simple front-end validation
+        if (!form.name.trim() || !form.bank_name.trim() || !form.bank_account.trim()) {
+            setMessage({ text: "Please fill in all required fields.", type: "error" });
+            return;
+        }
+
+        setSubmitting(true);
+        setMessage({ text: "", type: "" });
+
+        try {
+            await publicApi.post("/api/withdrawals", {
+                user_id: user.id,
+                name: form.name,
+                bank_name: form.bank_name,
+                bank_account: form.bank_account,
+                phone: form.phone,
+            });
+
+            // ✅ Show success message
+            setMessage({ text: "Withdrawal request submitted successfully!", type: "success" });
+
+            // Auto-refresh after short delay
+            setTimeout(() => {
+                setShowModal(false);
+                setForm({ name: "", bank_name: "", bank_account: "", phone: "" });
+                setMessage({ text: "", type: "" })
+                setRefresh((prev) => prev + 1);
+            }, 2000);
+        } catch (err) {
+            console.error(err);
+            setMessage({ text: "Error submitting withdrawal request.", type: "error" });
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-[#000000] text-white pb-20 pt- px-4 font-sans relative overflow-hidden">
+        <div className="min-h-screen bg-[#000000] text-white pb-28 px-4 font-sans relative overflow-hidden">
             <h1 className="text-3xl font-bold mt-6 mb-6 text-purple-400">Withdraw</h1>
 
-            {/* Balance & Withdraw Button */}
+            {/* 💰 Balance Card */}
             <div className="bg-[#1A1A1A] p-6 rounded-2xl shadow-lg space-y-4">
                 <p className="text-gray-400 text-sm">
                     Your Balance:
-                    <span className="font-bold text-white ml-2">{balance.toFixed(2)} $</span>
+                    <span className="font-bold text-white ml-2">{balance.toFixed(2)} BIRR</span>
                 </p>
 
                 {/* Progress Bar */}
@@ -35,7 +118,7 @@ export default function Withdraw() {
                 </div>
                 <p className="text-gray-400 text-xs mt-1">
                     {balance < minWithdraw
-                        ? `${(minWithdraw - balance).toFixed(2)} $ left to reach minimum withdrawal`
+                        ? `${(minWithdraw - balance).toFixed(2)} BIRR left to reach minimum withdrawal`
                         : "You can withdraw now!"}
                 </p>
 
@@ -46,38 +129,125 @@ export default function Withdraw() {
                         : "bg-gray-600 cursor-not-allowed"
                         }`}
                     disabled={balance < minWithdraw}
+                    onClick={() => setShowModal(true)}
                 >
                     Withdraw Now
                 </button>
             </div>
 
-            {/* Withdraw History */}
+            {/* 📜 Withdraw History */}
             <div className="mt-8">
                 <h2 className="text-xl font-semibold mb-4 text-purple-400">Withdraw History</h2>
                 <div className="space-y-3">
-                    {history.map((item) => (
-                        <div
-                            key={item.id}
-                            className="flex justify-between items-center bg-[#1A1A1A] p-4 rounded-xl shadow-md"
-                        >
-                            <div>
-                                <p className="text-white font-semibold">{item.amount.toFixed(2)} $</p>
-                                <p className="text-gray-400 text-sm">{item.date}</p>
-                            </div>
-                            <span
-                                className={`px-3 py-1 rounded-full text-xs font-bold ${item.status === "Paid"
-                                    ? "bg-green-500 text-black"
-                                    : "bg-yellow-500 text-black"
-                                    }`}
+                    {withdrawHistory.length === 0 ? (
+                        <p className="text-gray-400 text-center">No withdrawal history yet.</p>
+                    ) : (
+                        withdrawHistory.map((item) => (
+                            <div
+                                key={item.id}
+                                className="flex justify-between items-center bg-[#1A1A1A] p-4 rounded-xl shadow-md"
                             >
-                                {item.status}
-                            </span>
-                        </div>
-                    ))}
+                                <div>
+                                    <p className="text-white font-semibold">
+                                        {Number(item.requested_amount).toFixed(2)} BIRR
+                                    </p>
+                                    <p className="text-gray-400 text-sm">
+                                        {new Date(item.created_at).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                <span
+                                    className={`px-3 py-1 rounded-full text-xs font-bold ${item.status === "paid"
+                                        ? "bg-green-500 text-black"
+                                        : "bg-yellow-500 text-black"
+                                        }`}
+                                >
+                                    {item.status === "paid" ? "Paid" : "Pending"}
+                                </span>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
 
-            <BottomNav />
+            {/* 🪟 Modal */}
+            {showModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="bg-[#1A1A1A] p-6 rounded-3xl w-full max-w-md space-y-4"
+                    >
+                        <h2 className="text-xl font-bold text-purple-400 text-center">
+                            Withdraw Details
+                        </h2>
+
+                        <input
+                            type="text"
+                            name="name"
+                            placeholder="Full Name"
+                            value={form.name}
+                            onChange={handleChange}
+                            required
+                            className="w-full p-3 rounded-xl bg-[#000000] border border-[#5B2EFF] text-white focus:outline-none"
+                        />
+                        <input
+                            type="text"
+                            name="bank_name"
+                            placeholder="Bank Name"
+                            value={form.bank_name}
+                            onChange={handleChange}
+                            required
+                            className="w-full p-3 rounded-xl bg-[#000000] border border-[#5B2EFF] text-white focus:outline-none"
+                        />
+                        <input
+                            type="text"
+                            name="bank_account"
+                            placeholder="Bank Account"
+                            value={form.bank_account}
+                            onChange={handleChange}
+                            required
+                            className="w-full p-3 rounded-xl bg-[#000000] border border-[#5B2EFF] text-white focus:outline-none"
+                        />
+                        <input
+                            type="text"
+                            name="phone"
+                            placeholder="Phone (Optional)"
+                            value={form.phone}
+                            onChange={handleChange}
+                            className="w-full p-3 rounded-xl bg-[#000000] border border-[#5B2EFF] text-white focus:outline-none"
+                        />
+
+                        {/* ✅ Feedback Message */}
+                        {message.text && (
+                            <div
+                                className={`flex items-center gap-2 mb-4 p-3 rounded-xl ${message.type === "success" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+                                    }`}
+                            >
+                                {message.type === "success" ? <CheckCircle size={18} /> : <XCircle size={18} />}
+                                <span className="text-sm">{message.text}</span>
+                            </div>
+                        )}
+
+                        <div className="flex justify-between mt-4">
+                            <button
+                                className="px-4 py-2 rounded-xl bg-gray-600 hover:bg-gray-700"
+                                onClick={() => setShowModal(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className={`px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-600 font-bold ${submitting ? "opacity-50 cursor-not-allowed" : ""
+                                    }`}
+                                disabled={submitting}
+                                onClick={handleWithdraw}
+                            >
+                                {submitting ? "Submitting..." : "Confirm"}
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 }

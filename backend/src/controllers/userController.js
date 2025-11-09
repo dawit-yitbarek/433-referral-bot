@@ -47,6 +47,7 @@ export const getUserDashboard = async (req, res) => {
 
         // 4️⃣ Return merged user + referral summary
         const responseUser = {
+            id: user.id,
             telegram_id: user.telegram_id,
             name: user.name,
             profile_photo: user.profile_photo,

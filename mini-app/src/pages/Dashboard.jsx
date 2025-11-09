@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
 import { FaCopy } from "react-icons/fa";
 import { motion } from "framer-motion";
 import ErrorState from "../components/Error";
@@ -12,6 +13,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refresh, setRefresh] = useState(0)
+  const navigate = useNavigate();
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
@@ -127,6 +129,7 @@ export default function Dashboard() {
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.4 }}
+        onClick={() => navigate("/withdraw")}
         className={`w-full mt-8 py-4 rounded-3xl font-semibold text-white ${user.unclaimed_referrals * 0.4 >= 50
           ? "bg-gradient-to-r from-[#A259FF] to-[#5B2EFF] shadow-[0_0_30px_rgba(162,89,255,0.5)] hover:opacity-90"
           : "bg-[#0D0D0D] border border-[#1A1A1A] text-[#808080] cursor-not-allowed"
