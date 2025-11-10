@@ -33,7 +33,7 @@ export default function Withdraw() {
                 if (!tg?.initDataUnsafe?.user) throw new Error("Telegram WebApp user data not found");
 
                 const telegramId = tg.initDataUnsafe.user.id;
-                const name = tg.initDataUnsafe.user.first_name || "User";
+                const name = tg.initDataUnsafe.user.first_name;
 
                 const res = await publicApi.post("/api/user/sync", { id: telegramId, name });
                 setUser(res.data.user);

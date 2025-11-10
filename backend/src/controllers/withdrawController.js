@@ -26,83 +26,92 @@ export const getWithdrawHistory = async (req, res) => {
 };
 
 
-const admins = ADMINS.split(",");
-
 export const sendWithdraw = async (req, res) => {
-    const { user_id, name, bank_name, bank_account, phone } = req.body;
+  const { user_id, name, bank_name, bank_account, phone } = req.body;
 
-    if (!user_id || !name || !bank_name || !bank_account) {
-        console.log("❌ Missing fields in withdrawal request:", req.body);
-        return res.status(400).json({ error: "Missing required fields" });
+  if (!user_id || !name || !bank_name || !bank_account) {
+    console.log("❌ Missing fields in withdrawal request:", req.body);
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    // 1️⃣ Fetch user data
+    const userQuery = await pool.query(
+      `SELECT referral_count, claimed_referral_count FROM users WHERE id = $1`,
+      [user_id]
+    );
+    if (userQuery.rowCount === 0) {
+      console.log("❌ User not found for withdrawal request:", user_id);
+      return res.status(404).json({ error: "User not found" });
+    }
+    const user = userQuery.rows[0];
+
+    // 2️⃣ Calculate pending referrals
+    const pendingQuery = await pool.query(
+      `SELECT COALESCE(SUM(requested_referrals), 0) AS pending_referrals
+       FROM withdrawal_requests 
+       WHERE user_id = $1 AND status = 'pending'`,
+      [user_id]
+    );
+    const pendingReferrals = parseInt(pendingQuery.rows[0].pending_referrals || 0, 10);
+
+    // 3️⃣ Calculate available referrals
+    const availableReferrals =
+      user.referral_count - user.claimed_referral_count - pendingReferrals;
+
+    if (availableReferrals <= 0) {
+      console.log("❌ No referrals available for withdrawal for user:", user_id);
+      return res.status(400).json({ error: "No referrals available to withdraw" });
     }
 
-    try {
-        // 1️⃣ Fetch user data
-        const userQuery = await pool.query(`
-            SELECT referral_count, claimed_referral_count FROM users WHERE id = $1`,
-            [user_id]
-        );
-        if (userQuery.rowCount === 0) {
-            console.log("❌ User not found for withdrawal request:", user_id);
-            return res.status(404).json({ error: "User not found" });
-        }
-        const user = userQuery.rows[0];
+    // 4️⃣ Compute requested amount
+    const requestedAmount = availableReferrals * REFERRAL_VALUE;
 
-        // 2️⃣ Calculate pending referrals
-        const pendingQuery = await pool.query(`
-            SELECT COALESCE(SUM(requested_referrals), 0) AS pending_referrals
-             FROM withdrawal_requests 
-             WHERE user_id = $1 AND status = 'pending'`,
-            [user_id]
-        );
-        const pendingReferrals = parseInt(pendingQuery.rows[0].pending_referrals || 0, 10);
-
-        // 3️⃣ Calculate unclaimed referrals
-        const availableReferrals = user.referral_count - user.claimed_referral_count - pendingReferrals;
-        if (availableReferrals <= 0) {
-            console.log("❌ No referrals available for withdrawal for user:", user_id);
-            return res.status(400).json({ error: "No referrals available to withdraw" });
-        }
-
-        // 4️⃣ Compute requested amount
-        const requestedAmount = availableReferrals * REFERRAL_VALUE;
-
-        // 5️⃣ Determine admin with fewest pending requests
-        const adminQuery = await pool.query(`
-            SELECT assigned_to, COUNT(*) AS count
-             FROM withdrawal_requests
-             WHERE status = 'pending'
-             GROUP BY assigned_to`
-        );
-
-        // Build admin load map
-        const adminLoads = {};
-        admins.forEach(admin => adminLoads[admin] = 0);
-        adminQuery.rows.forEach(row => {
-            adminLoads[row.assigned_to] = parseInt(row.count);
-        });
-
-        // Pick admin with least pending requests
-        const assignedTo = Object.entries(adminLoads).sort((a, b) => a[1] - b[1])[0][0];
-
-        // 6️⃣ Insert the withdrawal request with assigned_to
-        const insertQuery = await pool.query(`
-            INSERT INTO withdrawal_requests
-            (user_id, name, requested_referrals, requested_amount, bank_name, bank_account, phone, status, assigned_to)
-             VALUES($1, $2, $3, $4, $5, $6, $7, 'pending', $8)
-             RETURNING *`,
-            [user_id, name, availableReferrals, requestedAmount, bank_name, bank_account, phone, assignedTo]
-        );
-
-        return res.json({
-            message: `✅ Withdrawal request submitted successfully and assigned to ${assignedTo}`,
-            request: insertQuery.rows[0],
-        });
-    } catch (err) {
-        console.error("❌ Error creating withdrawal:", err);
-        return res.status(500).json({ error: "Server error" });
+    // 5️⃣ Fetch all admins dynamically
+    const adminResult = await pool.query(`SELECT username FROM admins`);
+    if (adminResult.rowCount === 0) {
+      console.log("❌ No admins found");
+      return res.status(500).json({ error: "No admins available for assignment" });
     }
+
+    const admins = adminResult.rows.map((row) => row.username);
+
+    // 6️⃣ Get pending requests count per admin
+    const adminQuery = await pool.query(`
+      SELECT assigned_to, COUNT(*) AS count
+      FROM withdrawal_requests
+      WHERE status = 'pending'
+      GROUP BY assigned_to
+    `);
+
+    const adminLoads = {};
+    admins.forEach((admin) => (adminLoads[admin] = 0));
+    adminQuery.rows.forEach((row) => {
+      adminLoads[row.assigned_to] = parseInt(row.count);
+    });
+
+    // 7️⃣ Pick admin with least pending requests
+    const assignedTo = Object.entries(adminLoads).sort((a, b) => a[1] - b[1])[0][0];
+
+    // 8️⃣ Insert new withdrawal request
+    const insertQuery = await pool.query(
+      `INSERT INTO withdrawal_requests
+        (user_id, name, requested_referrals, requested_amount, bank_name, bank_account, phone, status, assigned_to)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', $8)
+       RETURNING *`,
+      [user_id, name, availableReferrals, requestedAmount, bank_name, bank_account, phone, assignedTo]
+    );
+
+    return res.json({
+      message: `✅ Withdrawal request submitted successfully and assigned to ${assignedTo}`,
+      request: insertQuery.rows[0],
+    });
+  } catch (err) {
+    console.error("❌ Error creating withdrawal:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
 };
+
 
 export const getAdminWithdrawals = async (req, res) => {
     const adminUsername = req.query.username;

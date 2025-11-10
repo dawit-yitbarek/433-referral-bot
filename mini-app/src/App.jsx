@@ -5,7 +5,6 @@ import Leaderboard from './pages/Leaderboard';
 import Withdraw from './pages/Withdraw';
 import BottomNav from './components/BottomNav';
 import AdminPage from './pages/Admin';
-
 const AppContent = () => {
 
 

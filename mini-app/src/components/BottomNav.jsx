@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FaHome, FaWallet, FaTrophy, FaUserShield } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { publicApi } from "../components/Api";
 
 export default function BottomNav() {
     const navigate = useNavigate();
@@ -9,20 +10,31 @@ export default function BottomNav() {
     const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
-        // ✅ Get username from Telegram WebApp
-        const tg = window.Telegram?.WebApp;
-        const username = tg?.initDataUnsafe?.user?.username;
+        const checkAdminRole = async () => {
+            try {
+                const tg = window.Telegram?.WebApp;
+                const username = tg?.initDataUnsafe?.user?.username;
 
-        if (!username) return;
+                if (!username) return;
 
-        // ✅ Parse admin usernames from .env (comma-separated)
-        const adminList = import.meta.env.VITE_ADMINS?.split(",")
-            .map((name) => name.trim().toLowerCase())
-            .filter(Boolean);
+                // ✅ Check if Super Admin
+                const superAdmin = import.meta.env.VITE_SUPER_ADMIN?.trim();
+                if (superAdmin && username === superAdmin) {
+                    setIsAdmin(true);
+                    return;
+                }
 
-        if (adminList?.includes(username.toLowerCase())) {
-            setIsAdmin(true);
-        }
+                // ✅ Not super admin → Check with backend if admin
+                const res = await publicApi.get(`/api/admin/check-admin?username=${username}`);
+                if (res.data?.isAdmin) {
+                    setIsAdmin(true);
+                }
+            } catch (err) {
+                console.error("❌ Error checking admin role:", err.message);
+            }
+        };
+
+        checkAdminRole();
     }, []);
 
     // ✅ Base navigation items
@@ -32,7 +44,7 @@ export default function BottomNav() {
         { icon: <FaWallet />, label: "Withdraw", path: "/withdraw" },
     ];
 
-    // ✅ Add admin page if user is an admin
+    // ✅ Add admin page if user is admin or super admin
     if (isAdmin) {
         navItems.push({
             icon: <FaUserShield />,
