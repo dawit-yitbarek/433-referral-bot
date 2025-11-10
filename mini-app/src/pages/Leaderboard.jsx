@@ -14,16 +14,17 @@ export default function Leaderboard() {
 
     useEffect(() => {
         const loadLeaderboard = async () => {
-            const tg = window.Telegram?.WebApp;
+            // const tg = window.Telegram?.WebApp;
             setLoading(true);
 
             try {
-                if (!tg || !tg.initDataUnsafe?.user) {
-                    throw new Error("Telegram WebApp user data not found");
-                }
+                // if (!tg || !tg.initDataUnsafe?.user) {
+                //     throw new Error("Telegram WebApp user data not found");
+                // }
 
-                const telegramUser = tg.initDataUnsafe.user;
-                const userId = telegramUser.id;
+                // const telegramUser = tg.initDataUnsafe.user;
+                // const userId = telegramUser.id;
+                const userId = 6828578175
                 setTelegramId(userId);
                 const res = await publicApi.get(`/api/leaderboard?user_id=${userId}`);
                 const { topTen, currentUser } = res.data;
@@ -66,11 +67,17 @@ export default function Leaderboard() {
                     ${Number(user.telegram_id) === telegramId ? "ring-2 ring-[#A259FF] shadow-[0_0_15px_rgba(162,89,255,0.3)]" : ""}`}
                         >
                             <div className="w-20 h-20 rounded-full overflow-hidden mb-3 border-4 border-[#5B2EFF]">
-                                <img
-                                    src={user.profile_photo || "/img/placeholder.png"}
-                                    alt={user.name}
-                                    className="w-full h-full object-cover"
-                                />
+                                {user.profile_photo ? (
+                                    <img
+                                        src={user.profile_photo}
+                                        alt={user.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#5B2EFF] to-[#A259FF] text-white font-bold text-xl">
+                                        {user.name?.charAt(0).toUpperCase() || "U"}
+                                    </div>
+                                )}
                             </div>
                             <div className="font-bold text-white text-base sm:text-lg truncate flex items-center justify-center gap-1">
                                 {user.name}
@@ -99,11 +106,17 @@ ${Number(user.telegram_id) === telegramId ? "ring-2 ring-[#A259FF] bg-[#2a2a3e]"
                         >
                             <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
                                 <span className="text-gray-400 w-5 sm:w-6 text-right">{user.rank}</span>
-                                <img
-                                    src={user.profile_photo || "/img/placeholder.png"}
-                                    alt={user.name}
-                                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full"
-                                />
+                                {user.profile_photo ? (
+                                    <img
+                                        src={user.profile_photo}
+                                        alt={user.name}
+                                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full"
+                                    />
+                                ) : (
+                                    <div className="w-9 h-9 rounded-full flex items-center justify-center bg-gradient-to-br from-[#5B2EFF] to-[#A259FF] text-white font-bold text-xl">
+                                        {user.name?.charAt(0).toUpperCase() || "U"}
+                                    </div>
+                                )}
                                 <span className="font-semibold text-white truncate flex items-center gap-1">
                                     {user.name}
                                     {Number(user.telegram_id) === telegramId && (
@@ -129,11 +142,17 @@ ${Number(user.telegram_id) === telegramId ? "ring-2 ring-[#A259FF] bg-[#2a2a3e]"
                                 <span className="bg-purple-700 text-purple-300 text-xs px-3 py-1 rounded-full font-bold">
                                     #{currentUser.rank}
                                 </span>
-                                <img
-                                    src={currentUser.profile_photo || "/img/placeholder.png"}
-                                    alt={currentUser.name}
-                                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full"
-                                />
+                                {currentUser.profile_photo ? (
+                                    <img
+                                        src={currentUser.profile_photo}
+                                        alt={currentUser.name}
+                                        className="w-10 h-10 sm:w-11 sm:h-11 rounded-full"
+                                    />
+                                ) : (
+                                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center bg-gradient-to-br from-[#5B2EFF] to-[#A259FF] text-white font-bold text-xl">
+                                        {currentUser.name?.charAt(0).toUpperCase() || "U"}
+                                    </div>
+                                )}
                                 <div>
                                     <div className="text-white font-semibold truncate">{currentUser.name}</div>
                                 </div>
