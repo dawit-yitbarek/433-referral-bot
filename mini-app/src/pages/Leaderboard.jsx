@@ -14,17 +14,16 @@ export default function Leaderboard() {
 
     useEffect(() => {
         const loadLeaderboard = async () => {
-            // const tg = window.Telegram?.WebApp;
+            const tg = window.Telegram?.WebApp;
             setLoading(true);
 
             try {
-                // if (!tg || !tg.initDataUnsafe?.user) {
-                //     throw new Error("Telegram WebApp user data not found");
-                // }
+                if (!tg || !tg.initDataUnsafe?.user) {
+                    throw new Error("Telegram WebApp user data not found");
+                }
 
-                // const telegramUser = tg.initDataUnsafe.user;
-                // const userId = telegramUser.id;
-                const userId = 6828578175
+                const telegramUser = tg.initDataUnsafe.user;
+                const userId = telegramUser.id;
                 setTelegramId(userId);
                 const res = await publicApi.get(`/api/leaderboard?user_id=${userId}`);
                 const { topTen, currentUser } = res.data;
