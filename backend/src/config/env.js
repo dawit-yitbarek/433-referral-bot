@@ -6,6 +6,5 @@ export const {
   WEBAPP_URL,
   BACKEND_URL,
   DATABASE_URL,
-  PORT,
-  ADMINS,
+  PORT
 } = process.env;

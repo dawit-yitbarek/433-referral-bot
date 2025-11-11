@@ -3,8 +3,8 @@ import { pool } from '../config/db.js';
 import { BOT_TOKEN, WEBAPP_URL } from '../config/env.js';
 
 export const bot = new Telegraf(BOT_TOKEN);
-const CHANNEL_ID = '@testing_refferal';
-const botUsername = 'Testreferral_bot';
+const CHANNEL_ID = '@Sport_433et';
+const botUsername = 'Geldearn_Bot';
 
 // ✅ Helper: Check if user joined the Telegram channel
 async function hasJoinedChannel(userId) {

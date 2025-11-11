@@ -1,5 +1,4 @@
 import { pool } from "../config/db.js";
-import { ADMINS } from '../config/env.js';
 
 const REFERRAL_VALUE = 0.4; // $ per referral
 

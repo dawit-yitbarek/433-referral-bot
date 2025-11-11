@@ -45,7 +45,7 @@ export default function Dashboard() {
   }, [refresh]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(`https://t.me/Testreferral_bot?start=${user.telegram_id}`);
+    navigator.clipboard.writeText(`https://t.me/Geldearn_Bot?start=${user.telegram_id}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -115,7 +115,7 @@ export default function Dashboard() {
         <p className="text-sm font-semibold text-[#BFBFBF] mb-2">Your Referral Link</p>
         <div className="flex items-center gap-4 justify-between bg-[#0D0D0D] rounded-2xl p-3 border border-[#5B2EFF]/30">
           <span className="text-xs md:text-sm break-all text-[#CBA6F7]">
-            {`https://t.me/Testreferral_bot?start=${user.telegram_id}`}
+            {`https://t.me/Geldearn_Bot?start=${user.telegram_id}`}
           </span>
           <button
             onClick={handleCopy}
@@ -159,7 +159,7 @@ export default function Dashboard() {
 
       {!user.hasJoined && (
         <JoinChannelBlocker
-          channelLink="https://t.me/testing_refferal"
+          channelLink="https://t.me/Sport_433et"
           onReload={() => setRefresh(prev => prev + 1)}
         />
       )}

@@ -1,7 +1,7 @@
 import { Telegraf } from 'telegraf';
 import { pool } from '../config/db.js';
 import { BOT_TOKEN } from '../config/env.js';
-const CHANNEL_ID = '@testing_refferal';
+const CHANNEL_ID = '@Sport_433et';
 
 const bot = new Telegraf(BOT_TOKEN);
 
