@@ -10,7 +10,7 @@ export const getLeaderboard = async (req, res) => {
       WITH ranked_users AS (
         SELECT 
           telegram_id, name, profile_photo, referral_count,
-          RANK() OVER (ORDER BY referral_count DESC) AS rank
+          ROW_NUMBER() OVER (ORDER BY referral_count DESC) AS rank
         FROM users
       )
       SELECT * FROM ranked_users ORDER BY rank ASC LIMIT 10;
@@ -26,7 +26,7 @@ export const getLeaderboard = async (req, res) => {
             WITH ranked_users AS (
               SELECT 
                 telegram_id, name, profile_photo, referral_count,
-                RANK() OVER (ORDER BY referral_count DESC) AS rank
+                ROW_NUMBER() OVER (ORDER BY referral_count DESC) AS rank
               FROM users
             )
             SELECT * FROM ranked_users WHERE telegram_id = $1;
