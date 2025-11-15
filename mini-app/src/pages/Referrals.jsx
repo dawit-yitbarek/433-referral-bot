@@ -14,7 +14,7 @@ import { publicApi } from "../components/Api";
 export default function UsersPage() {
     const [users, setUsers] = useState([]);
     const [page, setPage] = useState(1);
-    const [limit] = useState(1);
+    const [limit] = useState(20);
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
     const [userError, setUserError] = useState(null);

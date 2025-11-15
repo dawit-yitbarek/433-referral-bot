@@ -76,10 +76,6 @@ export const getUsers = async (req, res) => {
             [limit, offset]
         );
 
-        // 2️⃣ Get total count
-        const countQuery = await pool.query(`SELECT COUNT(*) FROM users`);
-        const totalUsers = parseInt(countQuery.rows[0].count);
-
         return res.json({
             users: usersQuery.rows,
             has_more: usersQuery.rows.length === limit
@@ -134,10 +130,10 @@ export const searchUser = async (req, res) => {
         // General search (name or username, partial match)
         const textSearch = await pool.query(
             `
-            SELECT *
-            FROM users
-            WHERE 
-                username ILIKE $1
+            SELECT 
+               id, telegram_id, username, name, profile_photo, referral_count, created_at
+               FROM users
+               WHERE username ILIKE $1
             `,
             [`%${q}%`]
         );
