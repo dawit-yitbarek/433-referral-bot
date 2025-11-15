@@ -8,6 +8,7 @@ export default function BottomNav() {
     const navigate = useNavigate();
     const location = useLocation();
     const [isAdmin, setIsAdmin] = useState(false);
+    const [isReferralPage, setIsReferralPage] = useState(false);
 
     useEffect(() => {
         const checkAdminRole = async () => {
@@ -36,6 +37,18 @@ export default function BottomNav() {
 
         checkAdminRole();
     }, []);
+
+    // ✅ Check if the current page is `/referrals`
+    useEffect(() => {
+        if (location.pathname === "/referrals") {
+            setIsReferralPage(true);
+        } else {
+            setIsReferralPage(false);
+        }
+    }, [location.pathname]);
+
+    // Prevent rendering of BottomNav if it's the referrals page
+    if (isReferralPage) return null;
 
     // ✅ Base navigation items
     const navItems = [

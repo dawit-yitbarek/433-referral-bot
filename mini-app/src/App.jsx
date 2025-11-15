@@ -18,7 +18,7 @@ const AppContent = () => {
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/referrals" element={<InvitationList />} />
       </Routes>
-      {/* <BottomNav /> */}
+      <BottomNav />
     </>
   );
 };
