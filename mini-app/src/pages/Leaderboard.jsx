@@ -1,4 +1,4 @@
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect } from "react";
 import LoadingState from "../components/Loading";
 import ErrorState from "../components/Error";
 import { publicApi } from "../components/Api";
@@ -14,16 +14,18 @@ export default function Leaderboard() {
 
     useEffect(() => {
         const loadLeaderboard = async () => {
-            const tg = window.Telegram?.WebApp;
+            // const tg = window.Telegram?.WebApp;
             setLoading(true);
 
             try {
-                if (!tg || !tg.initDataUnsafe?.user) {
-                    throw new Error("Telegram WebApp user data not found");
-                }
+                // if (!tg || !tg.initDataUnsafe?.user) {
+                //     throw new Error("Telegram WebApp user data not found");
+                // }
 
-                const telegramUser = tg.initDataUnsafe.user;
-                const userId = telegramUser.id;
+                // const telegramUser = tg.initDataUnsafe.user;
+                // const userId = telegramUser.id;
+                const userId = 8290286207;
+
                 setTelegramId(userId);
                 const res = await publicApi.get(`/api/leaderboard?user_id=${userId}`);
                 const { topTen, currentUser } = res.data;
@@ -57,112 +59,158 @@ export default function Leaderboard() {
                 </header>
 
                 {/* Top 3 Users */}
-                <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-6xl px-2">
-                    {topThree.map((user) => (
-                        <article
-                            key={Number(user.telegram_id)}
-                            className={`w-full h-64 rounded-xl flex flex-col items-center justify-center px-4 py-6 bg-[#1a1a2e] text-center
-                    ${Number(user.rank) === 1 ? "sm:col-span-2 md:col-span-1 order-1" : "order-2"}
-                    ${Number(user.telegram_id) === telegramId ? "ring-2 ring-[#A259FF] shadow-[0_0_15px_rgba(162,89,255,0.3)]" : ""}`}
-                        >
-                            <div className="w-20 h-20 rounded-full overflow-hidden mb-3 border-4 border-[#5B2EFF]">
-                                {user.profile_photo ? (
-                                    <img
-                                        src={user.profile_photo}
-                                        alt={user.name}
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#5B2EFF] to-[#A259FF] text-white font-bold text-xl">
-                                        {user.name?.charAt(0).toUpperCase() || "U"}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="font-bold text-white text-base sm:text-lg truncate flex items-center justify-center gap-1">
-                                {user.name}
-                                {Number(user.telegram_id) === telegramId && (
-                                    <span className="text-xs text-purple-400 font-semibold">(You)</span>
-                                )}
-                            </div>
-                            <div className="text-yellow-400 text-xl sm:text-2xl font-bold">
-                                {user.referral_count.toLocaleString()} rfs
-                            </div>
-                            <div className="text-sm text-gray-400 mt-1">
-                                {(Number(user.rank)) === 1 ? "1st" : (Number(user.rank)) === 2 ? "2nd" : "3rd"}
-                            </div>
-                        </article>
-                    ))}
-                </section>
+                <section className="w-full max-w-5xl mx-auto mt-4 px-2">
+                    <div className="grid grid-cols-3 gap-3 place-items-center">
+
+                        {/* 2nd place - Left */}
+                        {topThree[1] && (
+                            <article
+                                key={topThree[1].telegram_id}
+                                className={`flex flex-col items-center bg-[#1a1a2e] w-full py-3 rounded-xl
+                        ${Number(topThree[1].telegram_id) === telegramId ? "ring-2 ring-purple-500" : ""}`}
+                            >
+                                <div className="w-14 h-14 rounded-full overflow-hidden mb-2 border-2 border-[#5B2EFF]">
+                                    {topThree[1].profile_photo ? (
+                                        <img src={topThree[1].profile_photo} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#5B2EFF] to-[#A259FF] text-white font-bold text-lg">
+                                            {topThree[1].name?.charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-white text-sm font-semibold truncate max-w-[80px] text-center">
+                                    {topThree[1].name}
+                                </p>
+                                <p className="text-yellow-400 text-lg font-bold">{topThree[1].referral_count} rfs</p>
+                                <p className="text-gray-400 text-xs mt-1">2nd</p>
+                            </article>
+                        )}
+
+                        {/* 1st place - Center (Higher & Bigger) */}
+                        {topThree[0] && (
+                            <article
+                                key={topThree[0].telegram_id}
+                                className={`flex flex-col items-center bg-[#1a1a2e] w-full py-4 rounded-xl transform -translate-y-3
+                    ${Number(topThree[0].telegram_id) === telegramId ? "ring-2 ring-purple-500 shadow-[0_0_12px_rgba(162,89,255,0.3)]" : ""}`}
+                            >
+                                <div className="w-16 h-16 rounded-full overflow-hidden mb-2 border-2 border-[#5B2EFF]">
+                                    {topThree[0].profile_photo ? (
+                                        <img src={topThree[0].profile_photo} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#5B2EFF] to-[#A259FF] text-white font-bold text-lg">
+                                            {topThree[0].name?.charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-white text-base font-bold truncate max-w-[90px] text-center">
+                                    {topThree[0].name}
+                                </p>
+                                <p className="text-yellow-400 text-xl font-bold">{topThree[0].referral_count} rfs</p>
+                                <p className="text-gray-300 text-sm mt-1">1st</p>
+                            </article>
+                        )}
+
+                        {/* 3rd place - Right */}
+                        {topThree[2] && (
+                            <article
+                                key={topThree[2].telegram_id}
+                                className={`flex flex-col items-center bg-[#1a1a2e] w-full py-3 rounded-xl
+                ${Number(topThree[2].telegram_id) === telegramId ? "ring-2 ring-purple-500" : ""}`}
+                            >
+                                <div className="w-14 h-14 rounded-full overflow-hidden mb-2 border-2 border-[#A259FF]">
+                                    {topThree[2].profile_photo ? (
+                                        <img src={topThree[2].profile_photo} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-600 to-purple-400 text-white font-bold text-lg">
+                                            {topThree[2].name?.charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-white text-sm font-semibold truncate max-w-[80px] text-center">
+                                    {topThree[2].name}
+                                </p>
+                                <p className="text-yellow-400 text-lg font-bold">{topThree[2].referral_count} rfs</p>
+                                <p className="text-gray-400 text-xs mt-1">3rd</p>
+                            </article>
+                        )}
+
+                    </div>
+                </section >
+
 
                 {/* 4–10 Users */}
-                <section className="bg-[#1a1a2e] w-full max-w-6xl rounded-xl py-4 divide-y divide-[#292947] px-2">
-                    {others.map((user) => (
-                        <article
-                            key={user.telegram_id}
-                            className={`flex justify-between items-center px-2 sm:px-6 py-4 text-sm sm:text-base rounded-lg transition-all duration-200
+                < section className="bg-[#1a1a2e] w-full max-w-6xl rounded-xl py-4 divide-y divide-[#292947] px-2" >
+                    {
+                        others.map((user) => (
+                            <article
+                                key={user.telegram_id}
+                                className={`flex justify-between items-center px-2 sm:px-6 py-4 text-sm sm:text-base rounded-lg transition-all duration-200
 
 ${Number(user.telegram_id) === telegramId ? "ring-2 ring-[#A259FF] bg-[#2a2a3e]" : ""}`}
-                        >
-                            <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
-                                <span className="text-gray-400 w-5 sm:w-6 text-right">{user.rank}</span>
-                                {user.profile_photo ? (
-                                    <img
-                                        src={user.profile_photo}
-                                        alt={user.name}
-                                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full"
-                                    />
-                                ) : (
-                                    <div className="w-9 h-9 rounded-full flex items-center justify-center bg-gradient-to-br from-[#5B2EFF] to-[#A259FF] text-white font-bold text-xl">
-                                        {user.name?.charAt(0).toUpperCase() || "U"}
-                                    </div>
-                                )}
-                                <span className="font-semibold text-white truncate flex items-center gap-1">
-                                    {user.name}
-                                    {Number(user.telegram_id) === telegramId && (
-                                        <span className="text-xs text-purple-400 font-semibold">(You)</span>
+                            >
+                                <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
+                                    <span className="text-gray-400 w-5 sm:w-6 text-right">{user.rank}</span>
+                                    {user.profile_photo ? (
+                                        <img
+                                            src={user.profile_photo}
+                                            alt={user.name}
+                                            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full"
+                                        />
+                                    ) : (
+                                        <div className="w-9 h-9 rounded-full flex items-center justify-center bg-gradient-to-br from-[#5B2EFF] to-[#A259FF] text-white font-bold text-xl">
+                                            {user.name?.charAt(0).toUpperCase() || "U"}
+                                        </div>
                                     )}
-                                </span>
-                            </div>
-                            <div className="text-gray-300 font-semibold text-right">
-                                {user.referral_count.toLocaleString()} rfs
-                            </div>
-                        </article>
-                    ))}
-                </section>
+                                    <span className="font-semibold text-white truncate flex items-center gap-1">
+                                        {user.name}
+                                        {Number(user.telegram_id) === telegramId && (
+                                            <span className="text-xs text-purple-400 font-semibold">(You)</span>
+                                        )}
+                                    </span>
+                                </div>
+                                <div className="text-gray-300 font-semibold text-right">
+                                    {user.referral_count.toLocaleString()} rfs
+                                </div>
+                            </article>
+                        ))
+                    }
+                </section >
 
                 {/* Separate Current User (if not in Top 10) */}
-                {currentUser && (
-                    <section className="bg-[#1a1a2e] w-full max-w-6xl rounded-xl px-4 sm:px-6 py-6 relative mt-4">
-                        <div className="absolute -top-3 left-6 bg-purple-600 text-white text-xs px-3 py-1 rounded-full font-semibold shadow-md">
-                            Your Rank
-                        </div>
-                        <div className="flex justify-between items-center text-sm sm:text-base flex-wrap gap-y-4">
-                            <div className="flex items-center gap-3 sm:gap-4">
-                                <span className="bg-purple-700 text-purple-300 text-xs px-3 py-1 rounded-full font-bold">
-                                    #{currentUser.rank}
-                                </span>
-                                {currentUser.profile_photo ? (
-                                    <img
-                                        src={currentUser.profile_photo}
-                                        alt={currentUser.name}
-                                        className="w-10 h-10 sm:w-11 sm:h-11 rounded-full"
-                                    />
-                                ) : (
-                                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center bg-gradient-to-br from-[#5B2EFF] to-[#A259FF] text-white font-bold text-xl">
-                                        {currentUser.name?.charAt(0).toUpperCase() || "U"}
+                {
+                    currentUser && (
+                        <section className="bg-[#1a1a2e] w-full max-w-6xl rounded-xl px-4 sm:px-6 py-6 relative mt-4">
+                            <div className="absolute -top-3 left-6 bg-purple-600 text-white text-xs px-3 py-1 rounded-full font-semibold shadow-md">
+                                Your Rank
+                            </div>
+                            <div className="flex justify-between items-center text-sm sm:text-base flex-wrap gap-y-4">
+                                <div className="flex items-center gap-3 sm:gap-4">
+                                    <span className="bg-purple-700 text-purple-300 text-xs px-3 py-1 rounded-full font-bold">
+                                        #{currentUser.rank}
+                                    </span>
+                                    {currentUser.profile_photo ? (
+                                        <img
+                                            src={currentUser.profile_photo}
+                                            alt={currentUser.name}
+                                            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full"
+                                        />
+                                    ) : (
+                                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center bg-gradient-to-br from-[#5B2EFF] to-[#A259FF] text-white font-bold text-xl">
+                                            {currentUser.name?.charAt(0).toUpperCase() || "U"}
+                                        </div>
+                                    )}
+                                    <div>
+                                        <div className="text-white font-semibold truncate">{currentUser.name}</div>
                                     </div>
-                                )}
-                                <div>
-                                    <div className="text-white font-semibold truncate">{currentUser.name}</div>
+                                </div>
+                                <div className="text-purple-400 font-bold text-base sm:text-lg text-right">
+                                    {currentUser.referral_count?.toLocaleString()} rfs
                                 </div>
                             </div>
-                            <div className="text-purple-400 font-bold text-base sm:text-lg text-right">
-                                {currentUser.referral_count?.toLocaleString()} rfs
-                            </div>
-                        </div>
-                    </section>
-                )}
-            </main>
+                        </section>
+                    )
+                }
+            </main >
         </div >
     );
 }
