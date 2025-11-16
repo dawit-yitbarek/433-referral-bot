@@ -65,7 +65,7 @@ export const getUsers = async (req, res) => {
 
         const offset = (page - 1) * limit;
 
-        // 1️⃣ Get users (paginated)
+        // Get users
         const usersQuery = await pool.query(
             `
             SELECT id, telegram_id, username, name, profile_photo, referral_count, created_at
@@ -87,7 +87,6 @@ export const getUsers = async (req, res) => {
 };
 
 
-// routes/admin.js (same file)
 export const getAllReferrals = async (req, res) => {
     try {
         const { telegram_id } = req.query;
@@ -127,7 +126,7 @@ export const searchUser = async (req, res) => {
 
     try {
 
-        // General search (name or username, partial match)
+        // General search username
         const textSearch = await pool.query(
             `
             SELECT 

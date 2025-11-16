@@ -10,7 +10,7 @@ export const getUserDashboard = async (req, res) => {
         const { id: telegramId, name } = req.body;
         if (!telegramId) return res.status(400).json({ error: "Missing id" });
 
-        // 1️⃣ Check if user is a member of the Telegram channel
+        // Check if user is a member of the Telegram channel
         let hasJoined = false;
         try {
             const member = await bot.telegram.getChatMember(CHANNEL_ID, telegramId);
@@ -20,7 +20,7 @@ export const getUserDashboard = async (req, res) => {
             console.warn(`⚠️ Failed to verify channel membership for ${telegramId}: ${err.message}`);
         }
 
-        // 2️⃣ Fetch profile picture from Telegram
+        // Fetch profile picture from Telegram
         let profilePicture = null;
         try {
             const photos = await bot.telegram.getUserProfilePhotos(telegramId, 0, 1);
@@ -33,7 +33,7 @@ export const getUserDashboard = async (req, res) => {
             console.warn(`⚠️ Could not fetch profile picture for ${telegramId}:, err.message`);
         }
 
-        // 3️⃣ Upsert user (insert or update)
+        // Upsert user in DB
         const userQuery = `
       INSERT INTO users (telegram_id, name, profile_photo)
       VALUES ($1, $2, $3)
@@ -56,7 +56,7 @@ export const getUserDashboard = async (req, res) => {
         const claimed_referrals = user.claimed_referral_count;
         const unclaimed_referrals = total_referrals - claimed_referrals - pending_referrals;
 
-        // 4️⃣ Return merged user + referral summary
+        // Return merged user + referral summary
         const responseUser = {
             id: user.id,
             telegram_id: user.telegram_id,

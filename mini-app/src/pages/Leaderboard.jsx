@@ -61,7 +61,7 @@ export default function Leaderboard() {
                 <section className="w-full max-w-5xl mx-auto mt-4 px-2">
                     <div className="grid grid-cols-3 gap-3 place-items-center">
 
-                        {/* 2nd place - Left */}
+                        {/* 2nd place */}
                         {topThree[1] && (
                             <article
                                 key={topThree[1].telegram_id}
@@ -85,7 +85,7 @@ export default function Leaderboard() {
                             </article>
                         )}
 
-                        {/* 1st place - Center (Higher & Bigger) */}
+                        {/* 1st place */}
                         {topThree[0] && (
                             <article
                                 key={topThree[0].telegram_id}
@@ -109,7 +109,7 @@ export default function Leaderboard() {
                             </article>
                         )}
 
-                        {/* 3rd place - Right */}
+                        {/* 3rd place */}
                         {topThree[2] && (
                             <article
                                 key={topThree[2].telegram_id}
@@ -175,7 +175,7 @@ ${Number(user.telegram_id) === telegramId ? "ring-2 ring-[#A259FF] bg-[#2a2a3e]"
                     }
                 </section >
 
-                {/* Separate Current User (if not in Top 10) */}
+                {/* Separate Current User */}
                 {
                     currentUser && (
                         <section className="bg-[#1a1a2e] w-full max-w-6xl rounded-xl px-4 sm:px-6 py-6 relative mt-4">

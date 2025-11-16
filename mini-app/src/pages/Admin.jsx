@@ -16,7 +16,7 @@ export default function AdminPage() {
     const [alert, setAlert] = useState();
     const [copiedId, setCopiedId] = useState(null);
 
-    // ✅ Fetch withdrawals for this admin
+    // Fetch withdrawals for current admin
     const fetchWithdrawals = async (username) => {
         setLoading(true);
         try {
@@ -31,7 +31,7 @@ export default function AdminPage() {
         }
     };
 
-    // ✅ Initialize from Telegram WebApp & check role
+    // Initialize from Telegram WebApp & check role
     useEffect(() => {
         const tg = window.Telegram?.WebApp;
         const username = tg?.initDataUnsafe?.user?.username;
@@ -52,7 +52,7 @@ export default function AdminPage() {
         }
     }, []);
 
-    // ✅ Handle withdrawal processing
+    // Handle withdrawal processing
     const handleProcess = async (id, user_Id) => {
         if (processingId === id) return;
         setProcessingId(id);
@@ -69,13 +69,13 @@ export default function AdminPage() {
         }
     };
 
-    // ✅ Alert handler
+    // Alert handler
     const showAlert = (type) => {
         setAlert(type);
         setTimeout(() => setAlert(), 4000);
     };
 
-    // ✅ Copy helper
+    // Copy helper
     const handleCopy = async (id, text) => {
         try {
             await navigator.clipboard.writeText(text);
@@ -89,13 +89,13 @@ export default function AdminPage() {
     if (loading) return <LoadingState message="Loading admin data..." />;
     if (error) return <ErrorState retry={() => fetchWithdrawals(adminUsername)} />;
 
-    // ✅ Render Super Admin page if applicable
+    // Render Super Admin page if applicable
     if (isSuperAdmin) return <SuperAdmin />;
 
-    // ✅ Otherwise render normal admin withdrawal panel
+    // render normal admin withdrawal panel
     return (
         <div className={`min-h-screen bg-[#000000] text-white pb-28 px-4 font-sans relative overflow-hidden ${alert ? "pt-16" : "pt-6"}`}>
-            {/* ✅ Floating alert */}
+            {/* Floating alert */}
             <AnimatePresence>
                 {alert && (
                     <motion.div
@@ -163,8 +163,8 @@ export default function AdminPage() {
                                 onClick={() => handleProcess(item.id, item.user_id)}
                                 disabled={processingId === item.id}
                                 className={`px-4 py-2 rounded-xl font-bold transition ${processingId === item.id
-                                        ? "bg-gray-600 cursor-not-allowed"
-                                        : "bg-green-500 hover:bg-green-600"
+                                    ? "bg-gray-600 cursor-not-allowed"
+                                    : "bg-green-500 hover:bg-green-600"
                                     }`}
                             >
                                 {processingId === item.id ? "Confirming..." : "Confirm"}

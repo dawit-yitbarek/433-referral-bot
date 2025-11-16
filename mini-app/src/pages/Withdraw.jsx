@@ -22,9 +22,9 @@ export default function Withdraw() {
     });
 
     const [submitting, setSubmitting] = useState(false);
-    const minWithdraw = 50; // Minimum required to withdraw
+    const minWithdraw = 50;
 
-    // ✅ Load user and withdrawal history
+    // Load user and withdrawal history
     useEffect(() => {
         const loadUserData = async () => {
             setLoading(true)
@@ -62,7 +62,6 @@ export default function Withdraw() {
     };
 
     const handleWithdraw = async () => {
-        // ✅ Simple front-end validation
         if (!form.name.trim() || !form.bank_name.trim() || !form.bank_account.trim()) {
             setMessage({ text: "Please fill in all required fields.", type: "error" });
             return;
@@ -80,7 +79,6 @@ export default function Withdraw() {
                 phone: form.phone,
             });
 
-            // ✅ Show success message
             setMessage({ text: "Withdrawal request submitted successfully!", type: "success" });
 
             // Auto-refresh after short delay
@@ -135,7 +133,7 @@ export default function Withdraw() {
                 </button>
             </div>
 
-            {/* 📜 Withdraw History */}
+            {/* Withdraw History */}
             <div className="mt-8">
                 <h2 className="text-xl font-semibold mb-4 text-purple-400">Withdraw History</h2>
                 <div className="space-y-3">
@@ -169,7 +167,7 @@ export default function Withdraw() {
                 </div>
             </div>
 
-            {/* 🪟 Modal */}
+            {/* Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
                     <motion.div
@@ -217,7 +215,7 @@ export default function Withdraw() {
                             className="w-full p-3 rounded-xl bg-[#000000] border border-[#5B2EFF] text-white focus:outline-none"
                         />
 
-                        {/* ✅ Feedback Message */}
+                        {/* Feedback Message */}
                         {message.text && (
                             <div
                                 className={`flex items-center gap-2 mb-4 p-3 rounded-xl ${message.type === "success" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"

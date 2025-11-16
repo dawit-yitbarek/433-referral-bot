@@ -1,27 +1,27 @@
 import { pool } from "../config/db.js";
 
-const REFERRAL_VALUE = 0.4; // $ per referral
+const REFERRAL_VALUE = 0.4;
 
-// ✅ Fetch withdrawal history for a user
+// Fetch withdrawal history for a user
 export const getWithdrawHistory = async (req, res) => {
-    const { user_id } = req.query;
+  const { user_id } = req.query;
 
-    if (!user_id) return res.status(400).json({ error: "user_id is required" });
+  if (!user_id) return res.status(400).json({ error: "user_id is required" });
 
-    try {
-        const { rows } = await pool.query(`
+  try {
+    const { rows } = await pool.query(`
       SELECT id, requested_referrals, requested_amount, status, created_at 
        FROM withdrawal_requests 
        WHERE user_id = $1 
        ORDER BY created_at DESC`,
-            [user_id]
-        );
+      [user_id]
+    );
 
-        return res.json({ withdrawals: rows });
-    } catch (err) {
-        console.error("❌ Error fetching withdrawals:", err);
-        return res.status(500).json({ error: "Server error" });
-    }
+    return res.json({ withdrawals: rows });
+  } catch (err) {
+    console.error("❌ Error fetching withdrawals:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
 };
 
 
@@ -34,7 +34,7 @@ export const sendWithdraw = async (req, res) => {
   }
 
   try {
-    // 1️⃣ Fetch user data
+    // Fetch user data
     const userQuery = await pool.query(
       `SELECT referral_count, claimed_referral_count FROM users WHERE id = $1`,
       [user_id]
@@ -45,7 +45,7 @@ export const sendWithdraw = async (req, res) => {
     }
     const user = userQuery.rows[0];
 
-    // 2️⃣ Calculate pending referrals
+    // Calculate pending referrals
     const pendingQuery = await pool.query(
       `SELECT COALESCE(SUM(requested_referrals), 0) AS pending_referrals
        FROM withdrawal_requests 
@@ -54,7 +54,7 @@ export const sendWithdraw = async (req, res) => {
     );
     const pendingReferrals = parseInt(pendingQuery.rows[0].pending_referrals || 0, 10);
 
-    // 3️⃣ Calculate available referrals
+    // Calculate available referrals
     const availableReferrals =
       user.referral_count - user.claimed_referral_count - pendingReferrals;
 
@@ -63,10 +63,10 @@ export const sendWithdraw = async (req, res) => {
       return res.status(400).json({ error: "No referrals available to withdraw" });
     }
 
-    // 4️⃣ Compute requested amount
+    // Compute requested amount
     const requestedAmount = availableReferrals * REFERRAL_VALUE;
 
-    // 5️⃣ Fetch all admins dynamically
+    // Fetch all admins dynamically
     const adminResult = await pool.query(`SELECT username FROM admins`);
     if (adminResult.rowCount === 0) {
       console.log("❌ No admins found");
@@ -75,7 +75,7 @@ export const sendWithdraw = async (req, res) => {
 
     const admins = adminResult.rows.map((row) => row.username);
 
-    // 6️⃣ Get pending requests count per admin
+    // Get pending requests count per admin
     const adminQuery = await pool.query(`
       SELECT assigned_to, COUNT(*) AS count
       FROM withdrawal_requests
@@ -89,10 +89,10 @@ export const sendWithdraw = async (req, res) => {
       adminLoads[row.assigned_to] = parseInt(row.count);
     });
 
-    // 7️⃣ Pick admin with least pending requests
+    // Pick admin with least pending requests
     const assignedTo = Object.entries(adminLoads).sort((a, b) => a[1] - b[1])[0][0];
 
-    // 8️⃣ Insert new withdrawal request
+    // Insert new withdrawal request
     const insertQuery = await pool.query(
       `INSERT INTO withdrawal_requests
         (user_id, name, requested_referrals, requested_amount, bank_name, bank_account, phone, status, assigned_to)
@@ -113,27 +113,27 @@ export const sendWithdraw = async (req, res) => {
 
 
 export const getAdminWithdrawals = async (req, res) => {
-    const adminUsername = req.query.username;
+  const adminUsername = req.query.username;
 
-    try {
-        const { rows } = await pool.query(`
+  try {
+    const { rows } = await pool.query(`
             SELECT * FROM withdrawal_requests WHERE status = 'pending' AND assigned_to = $1
         `, [adminUsername]);
-        return res.json({ withdrawals: rows });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Server error" });
-    }
+    return res.json({ withdrawals: rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
 };
 
 export const processWithdrawal = async (req, res) => {
-    const { id, user_Id } = req.body;
-    try {
-        const { rows } = await pool.query(`UPDATE withdrawal_requests SET status = 'paid', processed_at = NOW() WHERE id = $1 RETURNING requested_referrals`, [id]);
-        await pool.query(`UPDATE users SET claimed_referral_count = claimed_referral_count + $1 WHERE id = $2`, [rows[0].requested_referrals, user_Id]);
-        res.json({ message: "Withdrawal marked as paid" });
-    } catch (error) {
-        console.error(error.message);
-        res.status(500).json({ message: "Server error" });
-    }
+  const { id, user_Id } = req.body;
+  try {
+    const { rows } = await pool.query(`UPDATE withdrawal_requests SET status = 'paid', processed_at = NOW() WHERE id = $1 RETURNING requested_referrals`, [id]);
+    await pool.query(`UPDATE users SET claimed_referral_count = claimed_referral_count + $1 WHERE id = $2`, [rows[0].requested_referrals, user_Id]);
+    res.json({ message: "Withdrawal marked as paid" });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ message: "Server error" });
+  }
 };

@@ -5,7 +5,7 @@ export const getLeaderboard = async (req, res) => {
   try {
     const userId = req.query.user_id;
 
-    // 1️⃣ Fetch Top 10 Users with Rank
+    // Fetch Top 10 Users with Rank
     const { rows: topTen } = await pool.query(`
       WITH ranked_users AS (
         SELECT 
@@ -16,10 +16,10 @@ export const getLeaderboard = async (req, res) => {
       SELECT * FROM ranked_users ORDER BY rank ASC LIMIT 10;
     `);
 
-    // 2️⃣ Check if Current User is in Top 10
+    // Check if Current User is in Top 10
     const isInTopTen = topTen.some(u => u.telegram_id.toString() === userId);
 
-    // 3️⃣ If not in Top 10, fetch current user separately
+    // If not in Top 10, fetch current user separately
     let currentUser = null;
     if (!isInTopTen) {
       const { rows } = await pool.query(`

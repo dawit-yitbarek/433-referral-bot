@@ -17,7 +17,7 @@ export default function SuperAdmin() {
     const [addingAdmin, setAddingAdmin] = useState(false);
     const [deletingAdmin, setDeletingAdmin] = useState(false);
 
-    // ✅ Fetch all withdrawals and admins
+    // Fetch all withdrawals and admins
     const fetchData = async () => {
         setLoading(true);
         try {
@@ -42,7 +42,7 @@ export default function SuperAdmin() {
     }, []);
 
 
-    // ✅ Add new admin
+    // Add new admin
     const handleAddAdmin = async () => {
         if (!newAdmin.trim()) return;
         setAddingAdmin(true)
@@ -60,7 +60,7 @@ export default function SuperAdmin() {
         }
     };
 
-    // ✅ Delete admin with confirmation
+    // Delete admin with confirmation
     const handleDeleteAdmin = async (username) => {
         setDeletingAdmin(true)
         try {
@@ -76,7 +76,7 @@ export default function SuperAdmin() {
         }
     };
 
-    // ✅ Alerts
+    // Alerts
     const showAlert = (type, message) => {
         setAlert({ type, message });
         setTimeout(() => setAlert(null), 4000);
@@ -100,7 +100,7 @@ export default function SuperAdmin() {
 
     return (
         <div className="min-h-screen bg-black text-white pb-28 px-4 font-sans relative overflow-hidden pt-6">
-            {/* ✅ Floating alert */}
+            {/* Floating alert */}
             <AnimatePresence>
                 {alert && (
                     <motion.div
@@ -127,7 +127,7 @@ export default function SuperAdmin() {
                 Super Admin Dashboard
             </h1>
 
-            {/* 🔹 Tabs */}
+            {/* Tabs */}
             <div className="flex justify-center gap-6 mb-8">
                 {["pending", "paid"].map((tab) => (
                     <button
@@ -143,7 +143,7 @@ export default function SuperAdmin() {
                 ))}
             </div>
 
-            {/* 🔹 Withdrawals list */}
+            {/* Withdrawals list */}
             {filtered.length === 0 ? (
                 <p className="text-gray-400 text-center">
                     No {activeTab} withdrawal requests found.
@@ -174,21 +174,21 @@ export default function SuperAdmin() {
                                     <p className="text-gray-500 text-xs mt-1">
                                         Requested: {new Date(item.created_at).toLocaleString(
                                             "en-US", {
-                                                month: "short",
-                                                day: "numeric",
-                                                year: "numeric"
-                                            }
+                                            month: "short",
+                                            day: "numeric",
+                                            year: "numeric"
+                                        }
                                         )}
                                     </p>
                                     {item.processed_at && (
                                         <p className="text-gray-500 text-xs">
                                             Processed: {new Date(item.processed_at).toLocaleString(
-                                            "en-US", {
+                                                "en-US", {
                                                 month: "short",
                                                 day: "numeric",
                                                 year: "numeric"
                                             }
-                                        )}
+                                            )}
                                         </p>
                                     )}
                                     <p className="text-gray-500 text-xs">
@@ -201,7 +201,7 @@ export default function SuperAdmin() {
                 </div>
             )}
 
-            {/* 🔹 Admin management */}
+            {/* Admin management */}
             <div className="mt-12 border-t border-[#5B2EFF]/30 pt-6">
                 <h2 className="text-2xl font-semibold text-purple-400 mb-4 text-center">
                     Manage Admins
@@ -247,7 +247,7 @@ export default function SuperAdmin() {
                 </div>
             </div>
 
-            {/* 🔹 Delete confirmation popup */}
+            {/* Delete confirmation popup */}
             <AnimatePresence>
                 {confirmDelete && (
                     <motion.div

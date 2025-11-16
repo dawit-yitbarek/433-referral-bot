@@ -27,14 +27,14 @@ bot.start(async (ctx) => {
         const referrerId = args[1] ? parseInt(args[1]) : null;
         const displayName = name || username || 'friend';
 
-        // Check if user exists (only needed fields)
+        // Check if user exists
         const res = await pool.query(
             'SELECT telegram_id, name, username, joined_telegram FROM users WHERE telegram_id = $1',
             [userId]
         );
         let user = res.rows[0];
 
-        // 🆕 New user
+        // New user
         if (!user) {
             const alreadyJoined = await hasJoinedChannel(userId);
 
@@ -78,7 +78,7 @@ bot.start(async (ctx) => {
             return;
         }
 
-        // 🧍 Existing user
+        // Existing user
         if (user.joined_telegram) {
             await ctx.reply(
                 `👋 Hey ${displayName}! You’ve already joined our Telegram channel.\n\nEarn more rewards by inviting friends!`,
@@ -114,14 +114,14 @@ bot.action('verify_join', async (ctx) => {
             return ctx.answerCbQuery('❌ Please join the channel first!', { show_alert: true });
         }
 
-        // Update joined status (only needed fields)
+        // Update joined status
         const res = await pool.query(
             'UPDATE users SET joined_telegram = true WHERE telegram_id = $1 RETURNING telegram_id, name, username, joined_telegram, referred_by',
             [userId]
         );
         const user = res.rows[0];
 
-        // Reward referrer (if valid)
+        // Reward referrer
         if (user?.referred_by) {
             await pool.query(
                 'UPDATE users SET referral_count = referral_count + 1 WHERE telegram_id = $1',
@@ -148,7 +148,7 @@ bot.action('verify_join', async (ctx) => {
 bot.action('show_referral', async (ctx) => {
     try {
         const userId = ctx.from.id;
-        await ctx.answerCbQuery(); // remove "loading"
+        await ctx.answerCbQuery();
         await ctx.reply(
             `🎁 Your referral link:\nhttps://t.me/${botUsername}?start=${userId}`,
             Markup.inlineKeyboard([

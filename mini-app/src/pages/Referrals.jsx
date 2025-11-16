@@ -3,14 +3,6 @@ import { motion } from "framer-motion";
 import { RefreshCw, X } from "lucide-react";
 import { publicApi } from "../components/Api";
 
-/**
- * UsersPage
- *
- * - Sorting: highest, lowest, latest, oldest
- * - Filtering: users with referrals (referral_count > 0)
- * - Search: local-first, then remote if not found. Search results render separately
- */
-
 export default function UsersPage() {
     const [users, setUsers] = useState([]);
     const [page, setPage] = useState(1);
@@ -33,7 +25,6 @@ export default function UsersPage() {
     const [searchError, setSearchError] = useState(null);
 
     // Sort & filter
-    // sortBy: 'highest' | 'lowest' | 'latest' | 'oldest'
     const [sortBy, setSortBy] = useState("highest");
     const [onlyWithReferrals, setOnlyWithReferrals] = useState(false);
 
@@ -45,7 +36,7 @@ export default function UsersPage() {
         return () => clearInterval(interval);
     }, [loading, refLoading, searching]);
 
-    // keep a ref to avoid duplicate page loads
+    // keep ref to avoid duplicate page loads
     const loadingRef = useRef(false);
 
     // Load users (paginated) — appends to existing users
@@ -89,14 +80,14 @@ export default function UsersPage() {
         }
     };
 
-    // Search: local-first, if not found then remote
+    // Handle search
     const handleSearch = async () => {
         const q = (searchQuery || "").trim();
         if (!q) return;
         setSearchResults([]);
         setSearchError(null);
 
-        // first check locally (search by name, username)
+        // first check locally search by username
         const localMatches = users.filter((u) => {
             const username = (u.username || "").toLowerCase();
             const term = q.toLowerCase();
@@ -118,7 +109,6 @@ export default function UsersPage() {
                 console.log("Global search matches:", found);
                 setSearchError("No user found with this username.");
             } else {
-                // keep search results separate from loaded users
                 console.log("Global search matches:", found);
                 setSearchResults(found);
             }
@@ -138,11 +128,9 @@ export default function UsersPage() {
         setSearching(false);
     };
 
-    // Sort + filter logic applied to a list before rendering
     const applySortFilter = (list) => {
         let arr = [...list];
 
-        // filter: only users with referrals
         if (onlyWithReferrals) {
             arr = arr.filter((u) => Number(u.referral_count) > 0);
         }
@@ -181,8 +169,6 @@ export default function UsersPage() {
     };
 
     // Rendered lists:
-    // - if searchResults.length > 0 => show "Search Results" section (sorted/filtered)
-    // - then show loaded users section (sorted/filtered)
     const renderedSearch = searchResults;
     const renderedUsers = applySortFilter(users);
 
@@ -259,7 +245,7 @@ export default function UsersPage() {
                 {searchError && <p className={`${searchError !== "No user found with this username." && "text-red-400"} mt-3`}>{searchError}</p>}
             </div>
 
-            {/* Search Results (if any) */}
+            {/* Search Results */}
             {renderedSearch.length > 0 && (
                 <div className="max-w-4xl mx-auto mt-6">
                     <h2 className="text-lg text-[#CBA6F7] font-semibold mb-3">Search Results</h2>

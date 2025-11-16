@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 
-export default function LoadingState({message}){
+export default function LoadingState({ message }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#000000] text-white font-poppins relative overflow-hidden">
       {/* Glowing background animation */}
@@ -35,7 +35,7 @@ export default function LoadingState({message}){
         {message}
       </motion.p>
 
-      {/* Optional subtle gradient overlay */}
+      {/* subtle gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-[#5B2EFF]/10 to-transparent pointer-events-none"></div>
     </div>
   );

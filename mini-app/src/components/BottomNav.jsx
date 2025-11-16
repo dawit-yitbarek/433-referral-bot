@@ -18,14 +18,14 @@ export default function BottomNav() {
 
                 if (!username) return;
 
-                // ✅ Check if Super Admin
+                // Check if Super Admin
                 const superAdmin = import.meta.env.VITE_SUPER_ADMIN?.trim();
                 if (superAdmin && username === superAdmin) {
                     setIsAdmin(true);
                     return;
                 }
 
-                // ✅ Not super admin → Check with backend if admin
+                // Check with backend if admin
                 const res = await publicApi.get(`/api/admin/check-admin?username=${username}`);
                 if (res.data?.isAdmin) {
                     setIsAdmin(true);
@@ -38,7 +38,7 @@ export default function BottomNav() {
         checkAdminRole();
     }, []);
 
-    // ✅ Check if the current page is `/referrals`
+    // Check if the current page is `/referrals`
     useEffect(() => {
         if (location.pathname === "/referrals") {
             setIsReferralPage(true);
@@ -50,14 +50,14 @@ export default function BottomNav() {
     // Prevent rendering of BottomNav if it's the referrals page
     if (isReferralPage) return null;
 
-    // ✅ Base navigation items
+    // Base navigation items
     const navItems = [
         { icon: <FaHome />, label: "Dashboard", path: "/" },
         { icon: <FaTrophy />, label: "Leaderboard", path: "/leaderboard" },
         { icon: <FaWallet />, label: "Withdraw", path: "/withdraw" },
     ];
 
-    // ✅ Add admin page if user is admin or super admin
+    // Add admin page if user is admin or super admin
     if (isAdmin) {
         navItems.push({
             icon: <FaUserShield />,
