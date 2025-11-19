@@ -288,7 +288,7 @@ export default function UsersPage() {
                 <div className="flex justify-between">
                     <h2 className="text-lg text-[#CBA6F7] font-semibold mb-3">All Users</h2>
                     <p className="text-lg text-[#CBA6F7] font-semibold mb-3">
-                        {`Users count ${totalUsers}`}
+                        Users count {totalUsers && (`${totalUsers}`)}
                     </p>
                 </div>
 
