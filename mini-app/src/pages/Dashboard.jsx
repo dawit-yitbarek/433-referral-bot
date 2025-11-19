@@ -6,7 +6,7 @@ import ErrorState from "../components/Error";
 import LoadingState from "../components/Loading";
 import { publicApi } from '../components/Api';
 import JoinChannelBlocker from '../components/JoinChannelBlocker';
-const withdrawThreshold = 50;
+const withdrawThreshold = 500;
 
 export default function Dashboard() {
   const [copied, setCopied] = useState(false);
@@ -50,7 +50,7 @@ export default function Dashboard() {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const progress = Math.min(((user.unclaimed_referrals * 0.4) / withdrawThreshold) * 100, 100);
+  const progress = Math.min(((user.unclaimed_referrals * 1) / withdrawThreshold) * 100, 100);
 
   if (loading) {
     return <LoadingState message={"Loading your dashboard"} />
@@ -85,10 +85,10 @@ export default function Dashboard() {
         <div className="absolute inset-0 bg-gradient-to-br from-[#5B2EFF]/10 to-transparent"></div>
         <p className="text-[#BFBFBF] mb-2 text-center font-medium">Your Balance</p>
         <h2 className="text-5xl font-bold text-center text-[#A259FF] tracking-wide">
-          {(user.unclaimed_referrals * 0.4).toFixed(2)} BIRR
+          {(user.unclaimed_referrals * 1).toFixed(2)} BIRR
         </h2>
         <p className="mt-2 text-sm text-center text-[#808080]">
-          Withdraw at <span className="text-[#CBA6F7] font-semibold">50 BIRR</span>
+          Withdraw at <span className="text-[#CBA6F7] font-semibold">500 BIRR</span>
         </p>
 
         {/* Progress Bar */}
@@ -101,7 +101,7 @@ export default function Dashboard() {
           ></motion.div>
         </div>
         <p className="mt-3 text-xs text-center text-[#BFBFBF]">
-          {progress.toFixed(0)}% of goal reached
+          {progress.toFixed(1)}% of goal reached
         </p>
       </motion.div>
 
@@ -132,13 +132,13 @@ export default function Dashboard() {
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.4 }}
         onClick={() => navigate("/withdraw")}
-        className={`w-full mt-8 py-4 rounded-3xl font-semibold text-white ${user.unclaimed_referrals * 0.4 >= 50
+        className={`w-full mt-8 py-4 rounded-3xl font-semibold text-white ${user.unclaimed_referrals * 1 >= 500
           ? "bg-gradient-to-r from-[#A259FF] to-[#5B2EFF] shadow-[0_0_30px_rgba(162,89,255,0.5)] hover:opacity-90"
           : "bg-[#0D0D0D] border border-[#1A1A1A] text-[#808080] cursor-not-allowed"
           } transition-all duration-300`}
-        disabled={user.unclaimed_referrals * 0.4 < 50}
+        disabled={user.unclaimed_referrals * 1 < 500}
       >
-        {user.unclaimed_referrals * 0.4 >= 50
+        {user.unclaimed_referrals * 1 >= 500
           ? "Withdraw Now"
           : "Keep Referring to Withdraw"}
       </motion.button>
@@ -152,7 +152,7 @@ export default function Dashboard() {
         <div className="bg-[#1A1A1A] p-4 rounded-3xl text-center border border-[#5B2EFF]/20 shadow-[0_0_15px_rgba(162,89,255,0.1)]">
           <p className="text-sm text-[#BFBFBF]">Referral Earnings</p>
           <p className="text-2xl font-bold text-[#A259FF]">
-            {(user.claimed_referrals * 0.4).toFixed(2)} BIRR
+            {(user.claimed_referrals * 1).toFixed(2)} BIRR
           </p>
         </div>
       </div>

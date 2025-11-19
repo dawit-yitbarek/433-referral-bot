@@ -10,6 +10,7 @@ export default function UsersPage() {
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
     const [userError, setUserError] = useState(null);
+    const [totalUsers, setTotalUsers] = useState(null);
 
     // Modal + referrals
     const [selectedUser, setSelectedUser] = useState(null);
@@ -50,6 +51,7 @@ export default function UsersPage() {
             const res = await publicApi.get(`/api/admin/users?page=${page}&limit=${limit}`);
             const incoming = res.data.users || [];
             setUsers((prev) => [...prev, ...incoming]);
+            if (page === 1) setTotalUsers(res.data.total_users);
             setHasMore(Boolean(res.data.has_more));
             setPage((p) => p + 1);
         } catch (err) {
@@ -283,7 +285,12 @@ export default function UsersPage() {
 
             {/* Loaded Users */}
             {searchResults.length === 0 && !searching && !searchError && <div className="max-w-4xl mx-auto mt-6">
-                <h2 className="text-lg text-[#CBA6F7] font-semibold mb-3">All Users</h2>
+                <div className="flex justify-between">
+                    <h2 className="text-lg text-[#CBA6F7] font-semibold mb-3">All Users</h2>
+                    <p className="text-lg text-[#CBA6F7] font-semibold mb-3">
+                        {`Users count ${totalUsers}`}
+                    </p>
+                </div>
 
                 {users.length === 0 && !loading && !userError && <p className="text-center text-[#808080]">No users found</p>}
 

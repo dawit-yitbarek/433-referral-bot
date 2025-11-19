@@ -65,20 +65,28 @@ export const getUsers = async (req, res) => {
 
         const offset = (page - 1) * limit;
 
-        // Get users
+        // Get users with pagination
         const usersQuery = await pool.query(
             `
             SELECT id, telegram_id, username, name, profile_photo, referral_count, created_at
             FROM users
             ORDER BY referral_count DESC
-            LIMIT $1 OFFSET $2
-            `,
+            LIMIT $1 OFFSET $2`
+            ,
             [limit, offset]
         );
 
+        let totalUsers = null
+        if (page === 1) {
+            const countQuery = await pool.query(`SELECT COUNT(*) FROM users`);
+            totalUsers = parseInt(countQuery.rows[0].count);
+            console.log("User counted ", totalUsers)
+        };
+
         return res.json({
             users: usersQuery.rows,
-            has_more: usersQuery.rows.length === limit
+            has_more: usersQuery.rows.length === limit,
+            total_users: totalUsers
         });
     } catch (err) {
         console.error("❌ Error fetching users:", err.message);

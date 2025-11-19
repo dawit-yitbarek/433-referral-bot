@@ -22,7 +22,7 @@ export default function Withdraw() {
     });
 
     const [submitting, setSubmitting] = useState(false);
-    const minWithdraw = 50;
+    const minWithdraw = 500;
 
     // Load user and withdrawal history
     useEffect(() => {
@@ -54,7 +54,7 @@ export default function Withdraw() {
     if (loading) return <LoadingState message="Loading withdraw page..." />;
     if (error) return <ErrorState retry={() => setRefresh((prev) => prev + 1)} />;
 
-    const balance = parseFloat(user.unclaimed_referrals * 0.4 || 0);
+    const balance = parseFloat(user.unclaimed_referrals * 1 || 0);
     const progress = Math.min((balance / minWithdraw) * 100, 100);
 
     const handleChange = (e) => {
