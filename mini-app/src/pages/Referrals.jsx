@@ -6,7 +6,7 @@ import { publicApi } from "../components/Api";
 export default function UsersPage() {
     const [users, setUsers] = useState([]);
     const [page, setPage] = useState(1);
-    const [limit] = useState(20);
+    const [limit] = useState(50);
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
     const [userError, setUserError] = useState(null);
@@ -288,7 +288,7 @@ export default function UsersPage() {
                 <div className="flex justify-between">
                     <h2 className="text-lg text-[#CBA6F7] font-semibold mb-3">All Users</h2>
                     <p className="text-lg text-[#CBA6F7] font-semibold mb-3">
-                        Users count {totalUsers && (`${totalUsers}`)}
+                        Users count {totalUsers && (`${totalUsers.toLocaleString()}`)}
                     </p>
                 </div>
 

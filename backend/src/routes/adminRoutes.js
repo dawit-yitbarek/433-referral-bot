@@ -8,6 +8,7 @@ import {
     getUsers,
     getAllReferrals,
     searchUser,
+    broadcastMessage
 } from '../controllers/adminController.js';
 
 const router = express.Router();
@@ -18,6 +19,7 @@ router.get('/withdrawals', getAllWithdrawals);
 router.get('/users', getUsers);
 router.get('/referrals', getAllReferrals);
 router.get('/users/search', searchUser);
+router.post('/broadcast', broadcastMessage);
 router.post('/add', addAdmin);
 router.delete('/delete', deleteAdmin);
 

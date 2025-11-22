@@ -16,6 +16,8 @@ export default function SuperAdmin() {
     const [confirmDelete, setConfirmDelete] = useState(null);
     const [addingAdmin, setAddingAdmin] = useState(false);
     const [deletingAdmin, setDeletingAdmin] = useState(false);
+    const [broadcastMessage, setBroadcastMessage] = useState("");
+    const [sendingBroadcast, setSendingBroadcast] = useState(false);
 
     // Fetch all withdrawals and admins
     const fetchData = async () => {
@@ -34,6 +36,26 @@ export default function SuperAdmin() {
             setError("Failed to fetch data");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleBroadcast = async () => {
+        if (!broadcastMessage.trim()) return;
+
+        setSendingBroadcast(true);
+
+        try {
+            await publicApi.post("/api/admin/broadcast", {
+                message: broadcastMessage.trim(),
+            });
+
+            showAlert("success", "Broadcast started!");
+            setBroadcastMessage("");
+        } catch (err) {
+            console.error(err.message);
+            showAlert("error", "Failed to send broadcast.");
+        } finally {
+            setSendingBroadcast(false);
         }
     };
 
@@ -246,6 +268,32 @@ export default function SuperAdmin() {
                     )}
                 </div>
             </div>
+
+
+            {/* Message broadcast */}
+            <div className="mt-12 border-t border-[#5B2EFF]/30 pt-6">
+                <h2 className="text-2xl font-semibold text-purple-400 mb-4 text-center">
+                    Broadcast Message
+                </h2>
+
+                <div className="max-w-md mx-auto space-y-4">
+                    <textarea
+                        className="w-full bg-[#1A1A1A] text-white p-4 rounded-xl border border-[#5B2EFF]/40 focus:border-[#A259FF] outline-none h-32"
+                        placeholder="Write your message here..."
+                        value={broadcastMessage}
+                        onChange={(e) => setBroadcastMessage(e.target.value)}
+                    ></textarea>
+
+                    <button
+                        onClick={handleBroadcast}
+                        disabled={sendingBroadcast || !broadcastMessage.trim()}
+                        className="w-full bg-gradient-to-r from-[#A259FF] to-[#5B2EFF] py-3 rounded-xl font-semibold text-white hover:opacity-90 transition"
+                    >
+                        {sendingBroadcast ? "Sending..." : "Send Broadcast"}
+                    </button>
+                </div>
+            </div>
+
 
             {/* Delete confirmation popup */}
             <AnimatePresence>

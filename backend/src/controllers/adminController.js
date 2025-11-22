@@ -1,4 +1,5 @@
 import { pool } from "../config/db.js";
+import { bot } from "../bot/bot.js";
 
 export const checkAdmin = async (req, res) => {
     const adminUsername = req.query.username;
@@ -59,7 +60,7 @@ export const getAllWithdrawals = async (req, res) => {
 
 export const getUsers = async (req, res) => {
     try {
-        let { page = 1, limit = 20 } = req.query;
+        let { page = 1, limit = 50 } = req.query;
         page = parseInt(page);
         limit = parseInt(limit);
 
@@ -152,5 +153,61 @@ export const searchUser = async (req, res) => {
     } catch (err) {
         console.error("Search error:", err);
         res.status(500).json({ error: "Server error" });
+    }
+};
+
+
+export const broadcastMessage = async (req, res) => {
+    const { message } = req.body;
+
+    if (!message || !message.trim()) {
+        return res.status(400).json({ error: "Message is required" });
+    }
+
+    try {
+        // Fetch all users
+        const { rows: users } = await pool.query("SELECT telegram_id FROM users");
+        if (users.length === 0) {
+            return res.status(400).json({ error: "No users found." });
+        }
+
+        let successSent = false;
+        let responseSent = false;
+
+        // Go through users one by one
+        (async () => {
+            for (let i = 0; i < users.length; i++) {
+                try {
+                    await bot.telegram.sendMessage(users[i].telegram_id, message);
+
+                    // First success → respond to the frontend
+                    if (!successSent) {
+                        successSent = true;
+                        if (!responseSent) {
+                            responseSent = true;
+                            res.json({ success: true, message: "Broadcast started." });
+                        }
+                    }
+
+                    // Small delay to avoid Telegram rate limit
+                    await new Promise(r => setTimeout(r, 30));
+
+                } catch (err) {
+                    console.log("Failed to send to:", users[i].telegram_id);
+                }
+            }
+
+
+            if (!successSent && !responseSent) {
+                responseSent = true;
+                res.status(500).json({ error: "Failed to send message to any user." });
+            }
+        })();
+
+    } catch (err) {
+        console.error(err);
+        if (!res.headersSent) {
+            return res.status(500).json({ error: "Server error starting broadcast." });
+        }
     }
 };
