@@ -6,5 +6,8 @@ export const {
   WEBAPP_URL,
   BACKEND_URL,
   DATABASE_URL,
-  PORT
+  PORT,
+  CHANNEL_ID,
+  BOT_USERNAME,
+  REFERRAL_VALUE,
 } = process.env;

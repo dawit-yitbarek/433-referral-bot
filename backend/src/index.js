@@ -4,7 +4,6 @@ import { PORT, BACKEND_URL } from './config/env.js';
 
 app.listen(PORT, () => console.log(`🌐 Server running on port ${PORT}`));
 
-// Set Telegram webhook once at startup
 (async () => {
     try {
         const webhookUrl = `${BACKEND_URL}/webhook`;

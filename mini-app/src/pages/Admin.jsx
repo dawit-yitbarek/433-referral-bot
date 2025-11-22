@@ -31,7 +31,6 @@ export default function AdminPage() {
         }
     };
 
-    // Initialize from Telegram WebApp & check role
     useEffect(() => {
         const tg = window.Telegram?.WebApp;
         const username = tg?.initDataUnsafe?.user?.username;
@@ -89,10 +88,8 @@ export default function AdminPage() {
     if (loading) return <LoadingState message="Loading admin data..." />;
     if (error) return <ErrorState retry={() => fetchWithdrawals(adminUsername)} />;
 
-    // Render Super Admin page if applicable
     if (isSuperAdmin) return <SuperAdmin />;
 
-    // render normal admin withdrawal panel
     return (
         <div className={`min-h-screen bg-[#000000] text-white pb-28 px-4 font-sans relative overflow-hidden ${alert ? "pt-16" : "pt-6"}`}>
             {/* Floating alert */}

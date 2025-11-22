@@ -22,7 +22,8 @@ export default function Withdraw() {
     });
 
     const [submitting, setSubmitting] = useState(false);
-    const minWithdraw = 500;
+    const minWithdraw = Number(import.meta.env.VITE_WITHDRAW_THRESHOLD);
+    const referralPoint = Number(import.meta.env.VITE_REFERRAL_POINT);
 
     // Load user and withdrawal history
     useEffect(() => {
@@ -54,7 +55,7 @@ export default function Withdraw() {
     if (loading) return <LoadingState message="Loading withdraw page..." />;
     if (error) return <ErrorState retry={() => setRefresh((prev) => prev + 1)} />;
 
-    const balance = parseFloat(user.unclaimed_referrals * 1 || 0);
+    const balance = parseFloat(user.unclaimed_referrals * referralPoint);
     const progress = Math.min((balance / minWithdraw) * 100, 100);
 
     const handleChange = (e) => {
@@ -100,7 +101,7 @@ export default function Withdraw() {
         <div className="min-h-screen bg-[#000000] text-white pb-28 px-4 font-sans relative overflow-hidden">
             <h1 className="text-3xl font-bold mt-6 mb-6 text-purple-400">Withdraw</h1>
 
-            {/* 💰 Balance Card */}
+            {/* Balance Card */}
             <div className="bg-[#1A1A1A] p-6 rounded-2xl shadow-lg space-y-4">
                 <p className="text-gray-400 text-sm">
                     Your Balance:

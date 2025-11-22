@@ -6,9 +6,4 @@ const publicApi = axios.create({
   withCredentials: true,
 });
 
-const protectedApi = axios.create({
-  baseURL: BackEndUrl,
-  withCredentials: true,
-});
-
 export { publicApi, protectedApi };

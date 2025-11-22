@@ -29,7 +29,7 @@ export default function UsersPage() {
     const [sortBy, setSortBy] = useState("highest");
     const [onlyWithReferrals, setOnlyWithReferrals] = useState(false);
 
-    // small loading animation dots
+    // loading animation dots
     const [dotCount, setDotCount] = useState(1);
     useEffect(() => {
         if (!loading && !refLoading && !searching) return;
@@ -37,10 +37,9 @@ export default function UsersPage() {
         return () => clearInterval(interval);
     }, [loading, refLoading, searching]);
 
-    // keep ref to avoid duplicate page loads
     const loadingRef = useRef(false);
 
-    // Load users (paginated) — appends to existing users
+
     const loadUsers = async () => {
         if (!hasMore || loadingRef.current) return;
         setUserError(null);
@@ -63,7 +62,7 @@ export default function UsersPage() {
         }
     };
 
-    // Load referrals for a user and show modal
+    // Load referrals for a user
     const loadReferrals = async (telegramId, user) => {
         setSelectedUser(user);
         setModalOpen(true);
@@ -105,7 +104,7 @@ export default function UsersPage() {
         // else query the backend
         setSearching(true);
         try {
-            const res = await publicApi.get(`/api/admin/users/search?query=${encodeURIComponent(q)}`);
+            const res = await publicApi.get(`/api/admin/users/search?query=${q}`);
             const found = res.data.user;
             if (found.length === 0) {
                 console.log("Global search matches:", found);
@@ -170,8 +169,7 @@ export default function UsersPage() {
         return d.toLocaleDateString(undefined, opts).replace(",", "");
     };
 
-    // Rendered lists:
-    const renderedSearch = searchResults;
+    // Rendered list:
     const renderedUsers = applySortFilter(users);
 
     return (
@@ -248,11 +246,11 @@ export default function UsersPage() {
             </div>
 
             {/* Search Results */}
-            {renderedSearch.length > 0 && (
+            {searchResults.length > 0 && (
                 <div className="max-w-4xl mx-auto mt-6">
                     <h2 className="text-lg text-[#CBA6F7] font-semibold mb-3">Search Results</h2>
                     <div className="flex flex-col gap-4">
-                        {renderedSearch.map((user) => (
+                        {searchResults.map((user) => (
                             <motion.div
                                 key={`search-${user.id || user.telegram_id}`}
                                 whileTap={{ scale: 0.98 }}

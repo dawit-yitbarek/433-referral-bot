@@ -1,7 +1,6 @@
 import { Telegraf } from 'telegraf';
 import { pool } from '../config/db.js';
-import { BOT_TOKEN } from '../config/env.js';
-const CHANNEL_ID = '@Sport_433et';
+import { BOT_TOKEN, CHANNEL_ID } from '../config/env.js';
 
 const bot = new Telegraf(BOT_TOKEN);
 
@@ -30,7 +29,7 @@ export const getUserDashboard = async (req, res) => {
                 profilePicture = `https://api.telegram.org/file/bot${BOT_TOKEN}/${file.file_path}`;
             }
         } catch (err) {
-            console.warn(`⚠️ Could not fetch profile picture for ${telegramId}:, err.message`);
+            console.warn(`⚠️ Could not fetch profile picture for ${telegramId}: ${err.message}`);
         }
 
         // Upsert user in DB

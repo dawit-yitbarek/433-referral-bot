@@ -50,7 +50,6 @@ export default function BottomNav() {
     // Prevent rendering of BottomNav if it's the referrals page
     if (isReferralPage) return null;
 
-    // Base navigation items
     const navItems = [
         { icon: <FaHome />, label: "Dashboard", path: "/" },
         { icon: <FaTrophy />, label: "Leaderboard", path: "/leaderboard" },
@@ -107,4 +106,4 @@ export default function BottomNav() {
             })}
         </div >
     );
-}
+};

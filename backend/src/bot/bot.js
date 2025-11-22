@@ -1,12 +1,9 @@
 import { Telegraf, Markup } from 'telegraf';
 import { pool } from '../config/db.js';
-import { BOT_TOKEN, WEBAPP_URL } from '../config/env.js';
+import { BOT_TOKEN, WEBAPP_URL, CHANNEL_ID, BOT_USERNAME } from '../config/env.js';
 
 export const bot = new Telegraf(BOT_TOKEN);
-const CHANNEL_ID = '@Sport_433et';
-const botUsername = 'Testreferral_bot';
 
-// ✅ Helper: Check if user joined the Telegram channel
 async function hasJoinedChannel(userId) {
     try {
         const member = await bot.telegram.getChatMember(CHANNEL_ID, userId);
@@ -150,7 +147,7 @@ bot.action('show_referral', async (ctx) => {
         const userId = ctx.from.id;
         await ctx.answerCbQuery();
         await ctx.reply(
-            `🎁 Your referral link:\nhttps://t.me/${botUsername}?start=${userId}`,
+            `🎁 Your referral link:\nhttps://t.me/${BOT_USERNAME}?start=${userId}`,
             Markup.inlineKeyboard([
                 [Markup.button.webApp('🌐 Open Mini App', WEBAPP_URL)]
             ])

@@ -1,6 +1,5 @@
 import { pool } from "../config/db.js";
-
-const REFERRAL_VALUE = 1;
+import { REFERRAL_VALUE } from "../config/env.js";
 
 // Fetch withdrawal history for a user
 export const getWithdrawHistory = async (req, res) => {

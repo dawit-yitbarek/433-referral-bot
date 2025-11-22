@@ -135,15 +135,15 @@ export const searchUser = async (req, res) => {
 
     try {
 
-        // General search username
+        // search by username
         const textSearch = await pool.query(
             `
             SELECT 
                id, telegram_id, username, name, profile_photo, referral_count, created_at
                FROM users
-               WHERE username ILIKE $1
+               WHERE username = $1
             `,
-            [`%${q}%`]
+            [q]
         );
 
 
