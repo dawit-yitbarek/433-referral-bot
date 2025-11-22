@@ -6,4 +6,4 @@ const publicApi = axios.create({
   withCredentials: true,
 });
 
-export { publicApi, protectedApi };
+export { publicApi };
