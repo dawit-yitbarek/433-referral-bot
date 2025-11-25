@@ -10,8 +10,6 @@ Join the bot → open the Mini App
 
 Unique referral links
 
-Anti-fraud validation for referrals
-
 Real-time balance and points
 
 Leaderboard
@@ -73,73 +71,158 @@ CREATE TABLE IF NOT EXISTS public.admins (
     username VARCHAR(50) NOT NULL UNIQUE
 );
 
-Users
-CREATE TABLE IF NOT EXISTS public.users (
-    id SERIAL PRIMARY KEY,
-    telegram_id BIGINT NOT NULL UNIQUE,
-    username TEXT,
-    referred_by BIGINT,
-    joined_telegram BOOLEAN DEFAULT FALSE,
-    referral_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    name TEXT,
-    profile_photo TEXT,
-    claimed_referral_count INTEGER DEFAULT 0
-);
+## 433 Referral Bot
 
-Withdrawal Requests
-CREATE TABLE IF NOT EXISTS public.withdrawal_requests (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    requested_referrals INTEGER NOT NULL,
-    requested_amount NUMERIC(12,2),
-    bank_name VARCHAR(50) NOT NULL,
-    phone VARCHAR(30),
-    admin_id INTEGER,
-    status VARCHAR(20) DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    processed_at TIMESTAMP,
-    bank_account TEXT NOT NULL,
-    name VARCHAR(100),
-    assigned_to VARCHAR(50),
-    FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
-    FOREIGN KEY (admin_id) REFERENCES public.admins(id) ON DELETE CASCADE
-);
+A complete Telegram referral system: a Telegram Bot, a Telegram Mini App (frontend), an Express/PostgreSQL backend, and an admin interface for managing users and withdrawals.
 
-### ⚙️ Environment Variables
+## Table of Contents
+- [About](#about)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Environment Variables](#environment-variables)
+- [Development Setup](#development-setup)
+- [Running](#running)
+- [Database](#database)
+- [Deployment Notes](#deployment-notes)
+- [Contributing](#contributing)
+- [License](#license)
 
-Backend (/backend/.env)
-BOT_TOKEN = Telegram Bot Token
-WEBAPP_URL = Frontend Mini App URL
-BACKEND_URL	= Backend API URL
-DATABASE_URL = PostgreSQL connection
-CHANNEL_ID = Channel username to verify joins
-BOT_USERNAME = Bot username
-REFERRAL_VALUE = Birr amount per referral
-PORT = Backend server port
+## About
 
+This repository implements a referral ecosystem that tracks referrals, prevents fraud (basic checks), exposes a leaderboard, manages withdrawals, and provides an admin interface to review and process requests.
 
-Frontend (/frontend/.env)
-VITE_BACKEND_URL = Backend API URL
-VITE_FRONTEND_URL = WebApp URL
-VITE_ADMIN_USERNAME	= Super admin username
-VITE_WITHDRAW_THRESHOLD	= Minimum birr required to withdraw
-VITE_REFERRAL_POINT= Birr reward per referral
+## Features
 
+- User flows: referral links, mini-app onboarding, real-time balances and points
+- Leaderboard to surface top referrers
+- Withdrawal requests with admin approval workflow
+- Admin and Super Admin roles for managing users and requests
+- PostgreSQL persistence with clear data models
 
-### 🧪 Installation & Setup
-Backend
+## Tech Stack
+
+- Backend: Node.js, Express
+- Bot: Telegraf (Telegram Bot API)
+- Database: PostgreSQL (`pg`)
+- Frontend (Mini App): React + Vite, Tailwind CSS
+
+## Project Structure
+
+Root layout (important folders):
+
+```
+backend/        # Express backend, bot and controllers
+mini-app/       # React + Vite Telegram Mini App (frontend)
+README.md
+```
+
+Key backend files:
+
+- `backend/src/index.js` - server entry
+- `backend/src/server.js` - express app setup
+- `backend/src/bot/bot.js` - Telegraf bot logic
+- `backend/src/bot/webhookHandler.js` - webhook handling
+- `backend/src/config/` - `db.js`, `env.js` for configuration
+- `backend/src/controllers/` - route handlers (users, admin, withdrawals, leaderboard)
+- `backend/src/routes/` - routing for API endpoints
+
+Frontend (mini-app) key files:
+
+- `mini-app/src/main.jsx` - app bootstrapping
+- `mini-app/src/App.jsx` - main React app
+- `mini-app/src/components/` - UI components
+
+## Prerequisites
+
+- Node.js 18+ and `npm`
+- PostgreSQL instance (local or hosted)
+- A Telegram Bot token and a Telegram Bot username
+
+## Environment Variables
+
+Create `.env` files in the `backend/` and `mini-app/` folders. Example keys:
+
+backend/.env (example)
+
+```
+BOT_TOKEN=your_telegram_bot_token
+WEBAPP_URL=https://your-webapp-url.example
+BACKEND_URL=https://your-backend-url.example
+DATABASE_URL=postgres://user:pass@host:5432/dbname
+CHANNEL_ID=@your_channel_username
+BOT_USERNAME=your_bot_username
+REFERRAL_VALUE=5
+PORT=3000
+```
+
+mini-app/.env (example)
+
+```
+VITE_BACKEND_URL=https://your-backend-url.example
+VITE_FRONTEND_URL=https://your-webapp-url.example
+VITE_ADMIN_USERNAME=superadmin
+VITE_WITHDRAW_THRESHOLD=50
+VITE_REFERRAL_POINT=5
+```
+
+Make sure to never commit real secret tokens to the repository.
+
+## Development Setup
+
+Backend (development)
+
+```powershell
 cd backend
 npm install
-npm install -g nodemon
-nodemon src/index.js
+npm run dev   # or `nodemon src/index.js` if configured
+```
 
-Frontend
-cd frontend
+Mini App (development)
+
+```powershell
+cd mini-app
 npm install
 npm run dev
+```
 
-### 🌐 Deployment
+Notes:
 
-### Bot is live on Telegram:
-### https://t.me/Geldearn_Bot?start=6867085646
+- The backend exposes API endpoints used by the mini-app and the bot. Check `backend/src/routes/` for available routes.
+- The bot uses `Telegraf`; depending on deployment you may run it via long polling or using webhooks configured in `bot/webhookHandler.js`.
+
+## Running (Production)
+
+- Build the mini-app: `cd mini-app && npm run build`
+- Start the backend server with a process manager (PM2) or containerization:
+
+```powershell
+cd backend
+NODE_ENV=production node src/index.js
+```
+
+Configure webhook URL for Telegram bot to point to your backend endpoint if using webhooks.
+
+## Database
+
+This project uses PostgreSQL. SQL schema snippets exist in the repo (users, admins, withdrawal_requests). Ensure your `DATABASE_URL` points to a database where migrations or initialization scripts have run.
+
+Example table names:
+
+- `users`
+- `admins`
+- `withdrawal_requests`
+
+If you want, I can add migration scripts (e.g., using `node-pg-migrate` or `knex`).
+
+## Deployment Notes
+
+- Configure `WEBAPP_URL`, `BACKEND_URL`, and `BOT_TOKEN` correctly for production.
+- If deploying the bot as a webhook, ensure your backend is reachable over HTTPS and the webhook is registered with Telegram.
+- Use environment-specific config for things like referral reward values and withdraw thresholds.
+
+
+```
+https://t.me/Geldearn_Bot?start=6867085646
+```
