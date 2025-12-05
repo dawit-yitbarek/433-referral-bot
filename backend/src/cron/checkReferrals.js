@@ -1,11 +1,11 @@
 import cron from "node-cron";
 import { pool } from "../config/db.js";
 import { bot } from "../bot/bot.js";
-import { channelId } from '../config/env.js'
+import { CHANNEL_ID } from '../config/env.js'
 
 async function isUserInChannel(userTelegramId) {
     try {
-        const res = await bot.telegram.getChatMember(channelId, userTelegramId);
+        const res = await bot.telegram.getChatMember(CHANNEL_ID, userTelegramId);
 
         const validStatuses = ["creator", "administrator", "member"];
         return validStatuses.includes(res.status);
