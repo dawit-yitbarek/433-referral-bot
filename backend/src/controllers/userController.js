@@ -1,8 +1,6 @@
-import { Telegraf } from 'telegraf';
 import { pool } from '../config/db.js';
 import { BOT_TOKEN, CHANNEL_ID } from '../config/env.js';
-
-const bot = new Telegraf(BOT_TOKEN);
+import { bot } from '../bot/bot.js';
 
 export const getUserDashboard = async (req, res) => {
     try {

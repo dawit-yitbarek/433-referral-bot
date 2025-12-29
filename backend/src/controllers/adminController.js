@@ -111,7 +111,7 @@ export const getAllReferrals = async (req, res) => {
                 referral_count,
                 created_at
             FROM users
-            WHERE referred_by = $1
+            WHERE referred_by = $1 AND joined_telegram = true
             ORDER BY id DESC
             `,
             [telegram_id]
