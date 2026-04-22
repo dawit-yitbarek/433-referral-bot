@@ -104,7 +104,7 @@ export default function AdminPage() {
                     >
                         {alert === "success" ? (
                             <div className="bg-green-500/20 text-green-400 flex items-center gap-2 mb-4 p-3 rounded-xl ">
-                                <CheckCircle /> Withdrawal marked as paid successfully!
+                                <CheckCircle /> Withdrawal marked as paid and user notified!
                             </div>
                         ) : (
                             <div className="bg-red-500/20 text-red-400 flex items-center gap-2 mb-4 p-3 rounded-xl ">

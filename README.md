@@ -120,7 +120,7 @@ README.md
 
 Key backend files:
 
-- `backend/src/index.js` - server entry
+- `backend/index.js` - server entry
 - `backend/src/server.js` - express app setup
 - `backend/src/bot/bot.js` - Telegraf bot logic
 - `backend/src/bot/webhookHandler.js` - webhook handling
@@ -176,7 +176,7 @@ Backend (development)
 ```powershell
 cd backend
 npm install
-npm run dev   # or `nodemon src/index.js` if configured
+npm run dev   # or `nodemon index.js` if configured
 ```
 
 Mini App (development)
@@ -199,7 +199,7 @@ Notes:
 
 ```powershell
 cd backend
-NODE_ENV=production node src/index.js
+NODE_ENV=production node index.js
 ```
 
 Configure webhook URL for Telegram bot to point to your backend endpoint if using webhooks.

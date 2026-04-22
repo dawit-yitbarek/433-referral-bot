@@ -1,42 +1,53 @@
-import { pool } from '../config/db.js';
+import logger from "../config/logger.js";
+import { pool } from "../config/db.js";
 
 export const getLeaderboard = async (req, res) => {
-
   try {
     const userId = req.query.user_id;
 
-    // Fetch Top 10 Users with Rank
-    const { rows: topTen } = await pool.query(`
-      WITH ranked_users AS (
+    const leaderboardQuery = `
+      WITH user_referral_counts AS (
         SELECT 
-          telegram_id, name, profile_photo, referral_count,
-          ROW_NUMBER() OVER (ORDER BY referral_count DESC) AS rank
-        FROM users
+          referred_by, 
+          COUNT(*)::int as live_count 
+        FROM users 
+        WHERE joined_telegram = true AND referred_by IS NOT NULL
+        GROUP BY referred_by
+      ),
+      ranked_users AS (
+        SELECT 
+          u.telegram_id, 
+          u.name, 
+          u.profile_photo, 
+          COALESCE(rc.live_count, 0) as referral_count,
+          ROW_NUMBER() OVER (ORDER BY COALESCE(rc.live_count, 0) DESC, u.created_at ASC) AS rank
+        FROM users u
+        LEFT JOIN user_referral_counts rc ON u.telegram_id = rc.referred_by
       )
-      SELECT * FROM ranked_users ORDER BY rank ASC LIMIT 10;
-    `);
+      SELECT * FROM ranked_users WHERE rank <= 10 OR telegram_id = $1
+      ORDER BY rank ASC;
+    `;
 
-    // Check if Current User is in Top 10
-    const isInTopTen = topTen.some(u => u.telegram_id.toString() === userId);
+    const { rows: allRelevantUsers } = await pool.query(leaderboardQuery, [
+      userId,
+    ]);
 
-    // If not in Top 10, fetch current user separately
-    let currentUser = null;
-    if (!isInTopTen) {
-      const { rows } = await pool.query(`
-            WITH ranked_users AS (
-              SELECT 
-                telegram_id, name, profile_photo, referral_count,
-                ROW_NUMBER() OVER (ORDER BY referral_count DESC) AS rank
-              FROM users
-            )
-            SELECT * FROM ranked_users WHERE telegram_id = $1;
-          `, [userId]);
-      currentUser = rows[0] || null;
-    }
+    // Extract the Top 10
+    const topTen = allRelevantUsers.filter((u) => u.rank <= 10);
+
+    const isInTopTen = topTen.some(
+      (u) => u.telegram_id.toString() === userId.toString(),
+    );
+
+    const currentUser = isInTopTen
+      ? null
+      : allRelevantUsers.find(
+          (u) => u.telegram_id.toString() === userId.toString(),
+        ) || null;
 
     res.json({ topTen, currentUser });
   } catch (err) {
-    console.error("❌ Error fetching leaderboard:", err.message);
+    logger.error("❌ Error fetching leaderboard:", err.message || err);
     res.status(500).json({ error: "Failed to load leaderboard" });
   }
 };

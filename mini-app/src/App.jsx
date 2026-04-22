@@ -1,16 +1,16 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Dashboard from './pages/Dashboard';
-import Leaderboard from './pages/Leaderboard';
-import Withdraw from './pages/Withdraw';
-import BottomNav from './components/BottomNav';
-import AdminPage from './pages/Admin';
-import InvitationList from './pages/Referrals';
-const AppContent = () => {
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Dashboard from "./pages/Dashboard";
+import Leaderboard from "./pages/Leaderboard";
+import Withdraw from "./pages/Withdraw";
+import BottomNav from "./components/BottomNav";
+import AdminPage from "./pages/Admin";
+import InvitationList from "./pages/Referrals";
+import { AppProvider } from "./context/UserContext";
 
-
-  return (
-    <>
+const App = () => (
+  <Router>
+    <AppProvider>
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
@@ -19,13 +19,7 @@ const AppContent = () => {
         <Route path="/referrals" element={<InvitationList />} />
       </Routes>
       <BottomNav />
-    </>
-  );
-};
-
-const App = () => (
-  <Router>
-    <AppContent />
+    </AppProvider>
   </Router>
 );
 
