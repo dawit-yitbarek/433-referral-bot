@@ -28,7 +28,7 @@ export default function BottomNav() {
     { icon: <FaWallet />, label: "Withdraw", path: "/withdraw" },
   ];
 
-  // Add admin page if user is admin or super admin
+  // Add admin page if user is admin
   if (isAdmin) {
     navItems.push({
       icon: <FaUserShield />,

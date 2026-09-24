@@ -7,35 +7,33 @@ import LoadingState from "../components/Loading";
 import JoinChannelBlocker from "../components/JoinChannelBlocker";
 import { useApp } from "../context/UserContext";
 
-const withdrawThreshold = Number(import.meta.env.VITE_WITHDRAW_THRESHOLD);
-const referralPoint = Number(import.meta.env.VITE_REFERRAL_POINT);
-const botUsername = import.meta.env.VITE_BOT_USERNAME;
-const channelUsername = import.meta.env.VITE_CHANNEL_USERNAME;
 
 export default function Dashboard() {
   const [copied, setCopied] = useState<boolean>(false);
-  const { user, loading, error, initApp } = useApp();
+  const { user, loading, error, initApp, botUsername, channelUsername, withdrawThreshold, referralValue } = useApp();
   const navigate = useNavigate();
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(
-      `https://t.me/${botUsername}?start=${user?.telegram_id}`,
-    );
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
 
   if (loading) {
     return <LoadingState message={"Loading dashboard"} />;
   }
 
-  if (error) {
+  if (error || !user) {
     return <ErrorState retry={initApp} />;
   }
 
-  const unclaimed_referrals = user?.unclaimed_referrals || 0;
+  const handleCopy = () => {
+    navigator.clipboard.writeText(
+      `https://t.me/${botUsername}?start=${user.telegram_id}`,
+    );
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  const unclaimed_referrals = Math.max(user.referral_count - user.claimed_referral_count, 0);
+  const eligible_to_withdraw = unclaimed_referrals * referralValue >= withdrawThreshold
+  const claimable_amount = unclaimed_referrals * referralValue
   const progress = Math.min(
-    ((unclaimed_referrals * referralPoint) / withdrawThreshold) * 100,
+    ((claimable_amount) / withdrawThreshold) * 100,
     100,
   );
 
@@ -50,7 +48,7 @@ export default function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         className="text-3xl font-bold mt-8 text-center bg-gradient-to-r from-[#A259FF] to-[#CBA6F7] bg-clip-text text-transparent"
       >
-        Welcome, {user?.name}
+        Welcome, {user.first_name}
       </motion.h1>
 
       {/* Balance Card */}
@@ -65,12 +63,18 @@ export default function Dashboard() {
           Your Balance
         </p>
         <h2 className="text-5xl font-bold text-center text-[#A259FF] tracking-wide">
-          {(unclaimed_referrals * referralPoint).toFixed(2)} BIRR
+          {claimable_amount.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })} BIRR
         </h2>
         <p className="mt-2 text-sm text-center text-[#808080]">
           Withdraw at{" "}
           <span className="text-[#CBA6F7] font-semibold">
-            {withdrawThreshold} BIRR
+            {withdrawThreshold.toLocaleString('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })} BIRR
           </span>
         </p>
 
@@ -100,7 +104,7 @@ export default function Dashboard() {
         </p>
         <div className="flex items-center gap-4 justify-between bg-[#0D0D0D] rounded-2xl p-3 border border-[#5B2EFF]/30">
           <span className="text-xs md:text-sm break-all text-[#CBA6F7]">
-            {`https://t.me/${botUsername}?start=${user?.telegram_id}`}
+            {`https://t.me/${botUsername}?start=${user.telegram_id}`}
           </span>
           <button
             onClick={handleCopy}
@@ -117,13 +121,13 @@ export default function Dashboard() {
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.4 }}
         onClick={() => navigate("/withdraw")}
-        className={`w-full mt-8 py-4 rounded-3xl font-semibold text-white ${unclaimed_referrals * referralPoint >= withdrawThreshold
+        className={`w-full mt-8 py-4 rounded-3xl font-semibold text-white ${eligible_to_withdraw
           ? "bg-gradient-to-r from-[#A259FF] to-[#5B2EFF] shadow-[0_0_30px_rgba(162,89,255,0.5)] hover:opacity-90"
           : "bg-[#0D0D0D] border border-[#1A1A1A] text-[#808080] cursor-not-allowed"
           } transition-all duration-300`}
-        disabled={unclaimed_referrals * referralPoint < withdrawThreshold}
+        disabled={!eligible_to_withdraw}
       >
-        {unclaimed_referrals * referralPoint >= withdrawThreshold
+        {eligible_to_withdraw
           ? "Withdraw Now"
           : "Keep Referring to Withdraw"}
       </motion.button>
@@ -133,18 +137,18 @@ export default function Dashboard() {
         <div className="bg-[#1A1A1A] p-4 rounded-3xl text-center border border-[#5B2EFF]/20 shadow-[0_0_15px_rgba(162,89,255,0.1)]">
           <p className="text-sm text-[#BFBFBF]">Total Referrals</p>
           <p className="text-2xl font-bold text-[#CBA6F7]">
-            {user?.total_referrals}
+            {user.referral_count.toLocaleString('en-US')}
           </p>
         </div>
         <div className="bg-[#1A1A1A] p-4 rounded-3xl text-center border border-[#5B2EFF]/20 shadow-[0_0_15px_rgba(162,89,255,0.1)]">
-          <p className="text-sm text-[#BFBFBF]">Referral Earnings</p>
+          <p className="text-sm text-[#BFBFBF]">Claimed Referrals</p>
           <p className="text-2xl font-bold text-[#A259FF]">
-            {(user?.claimed_referrals || 0 * referralPoint).toFixed(2)} BIRR
+            {user.claimed_referral_count}
           </p>
         </div>
       </div>
 
-      {!user?.hasJoined && (
+      {!user.joined_channel && (
         <JoinChannelBlocker
           channelLink={`https://t.me/${channelUsername}`}
           onReload={initApp}

@@ -1,11 +1,12 @@
 import type { RequestHandler } from "express";
-import { Markup } from "telegraf";
-import { bot } from "../bot/bot.js";
 import { pool } from "../config/db.js";
+import type { PoolClient } from "pg";
 import { REFERRAL_VALUE, WITHDRAW_THRESHOLD } from "../config/env.js";
 import logger from "../config/logger.js";
-import { WEBAPP_URL } from "../config/env.js";
-import type { WithdrawalHistoryResponse, SendWithdrawalRequest, SendWithdrawalResponse } from "../types/index.js";
+import type { WithdrawalHistoryResponse, SendWithdrawalRequest, WithdrawalRequest, User } from "../types/index.js";
+import { ADMIN } from "../config/env.js";
+import { sendAdminPayoutMessage, sendUserApprovedPayoutMessage, sendAdminConfirmedPayoutMessage, sendUserRejectedPayoutMessage, sendAdminRejectedPayoutMessage } from "../utils/sendPayoutMessage.js";
+import { notifyAdminError } from "../utils/notifyAdminError.js";
 
 // Fetch withdrawal history for a user
 export const getWithdrawHistory: RequestHandler = async (req, res) => {
@@ -16,8 +17,8 @@ export const getWithdrawHistory: RequestHandler = async (req, res) => {
   try {
     const { rows } = await pool.query(
       `
-      SELECT id, requested_referrals, requested_amount, status, created_at 
-       FROM withdrawal_requests 
+      SELECT id, referrals_claimed, requested_amount, status, created_at 
+       FROM payout_requests 
        WHERE user_id = $1 
        ORDER BY created_at DESC`,
       [user_id],
@@ -25,234 +26,288 @@ export const getWithdrawHistory: RequestHandler = async (req, res) => {
 
     res.json({ withdrawals: rows } as WithdrawalHistoryResponse);
   } catch (err) {
-    logger.error(
-      `❌ Error fetching withdrawal history for user: 
-      ${err instanceof Error ? err.message : String(err)}`
-    );
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    logger.error(`❌ Error fetching withdrawal history for user:  ${errorMessage}`);
+    notifyAdminError(errorMessage, "withdrawal history fetcher")
     res.status(500).json({ error: "Server error" });
   }
   return;
 };
 
-export const sendWithdraw: RequestHandler = async (req, res) => {
-  const { user_id, name, bank_name, bank_account, phone }: SendWithdrawalRequest = req.body;
 
-  if (!user_id || !name || !bank_name || !bank_account) {
-    logger.error(`❌ Missing fields in withdrawal request: ${req.body}`);
-    return res.status(400).json({ error: "Missing required fields" });
+export const sendWithdraw: RequestHandler = async (req, res) => {
+  const {
+    user_id,
+    bank_name,
+    bank_account,
+    account_holder_name,
+  }: SendWithdrawalRequest = req.body;
+  const admin_telegram_id = Number(ADMIN.trim())
+
+  // 1. Basic validation
+  if (!user_id || !admin_telegram_id || !bank_name || !bank_account || !account_holder_name) {
+    return res.status(400).json({ error: "Missing required payout details" });
   }
 
-  const client = await pool.connect();
+  let client: PoolClient | undefined;
 
   try {
+    // Start atomic transaction
+    client = await pool.connect();
     await client.query("BEGIN");
 
-    const balanceQuery = `
-            SELECT 
-                u.telegram_id,
-                u.claimed_referral_count,
-                (SELECT COUNT(*)::int FROM users WHERE referred_by = u.telegram_id AND joined_telegram = true) as total_referrals,
-                (SELECT COALESCE(SUM(requested_referrals), 0)::int FROM withdrawal_requests WHERE user_id = u.id AND status = 'pending') as pending_referrals
-            FROM users u
-            WHERE u.id = $1
-            FOR UPDATE;
-        `;
+    // 2. Lock user row and fetch referral counters
+    const userQuery = `
+      SELECT 
+        id, 
+        telegram_id, 
+        first_name,
+        username,
+        referral_count, 
+        claimed_referral_count
+      FROM users
+      WHERE id = $1
+      FOR UPDATE;
+    `;
 
-    const { rows } = await client.query(balanceQuery, [user_id]);
+    const { rows: userRows } = await client.query(userQuery, [user_id]);
 
-    if (rows.length === 0) {
+    if (userRows.length === 0) {
       await client.query("ROLLBACK");
-      logger.error(`❌ User not found for withdrawal request: ${user_id}`);
       return res.status(404).json({ error: "User not found" });
     }
 
-    const user = rows[0];
-    const availableReferrals =
-      user.total_referrals -
-      user.claimed_referral_count -
-      user.pending_referrals;
+    const user: User = userRows[0];
 
-    // Validate Balance
-    if (availableReferrals < Number(WITHDRAW_THRESHOLD)) {
+    // 3. Calculate claimable referrals
+    const claimableReferrals = user.referral_count - user.claimed_referral_count;
+
+    // 4. Check minimum threshold requirement
+    const minThreshold = Number(WITHDRAW_THRESHOLD);
+    if (claimableReferrals < minThreshold) {
       await client.query("ROLLBACK");
-      logger.error(
-        `❌ referrals are under the minimum threshold to withdraw: ${user_id}`
-      );
-      return res
-        .status(400)
-        .json({ error: "referrals are under the minimum threshold" });
+      return res.status(400).json({
+        error: `Insufficient claimable referrals. Minimum required is ${minThreshold}, but you have ${claimableReferrals}.`,
+      });
     }
 
-    // Finds the admin with the minimum number of pending requests
-    const adminAssignQuery = `
-            SELECT a.username 
-            FROM admins a
-            LEFT JOIN withdrawal_requests wr ON a.username = wr.assigned_to AND wr.status = 'pending'
-            GROUP BY a.username
-            ORDER BY COUNT(wr.id) ASC
-            LIMIT 1;
-        `;
+    // 5. Compute request values
+    const pointRate = Number(REFERRAL_VALUE);
+    const requestedAmount = claimableReferrals * pointRate;
 
-    const adminRes = await client.query(adminAssignQuery);
-    if (adminRes.rowCount === 0) {
-      await client.query("ROLLBACK");
-      logger.error("❌ No admins found to set withdrawal request");
-      return res
-        .status(500)
-        .json({ error: "System Error: No admins configured." });
-    }
-    const assignedTo = adminRes.rows[0].username;
+    // 6. Insert record into payout_requests
+    const insertPayoutQuery = `
+      INSERT INTO payout_requests (
+        user_id,
+        admin_telegram_id,
+        referrals_claimed,
+        point_rate,
+        requested_amount,
+        bank_name,
+        bank_account,
+        account_holder_name,
+        status
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')
+      RETURNING *;
+    `;
 
-    const requestedAmount = availableReferrals * Number(REFERRAL_VALUE);
-
-    const insertQuery = `
-            INSERT INTO withdrawal_requests
-                (user_id, name, requested_referrals, requested_amount, bank_name, bank_account, phone, status, assigned_to)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', $8)
-            RETURNING *
-        `;
-
-    const result = await client.query(insertQuery, [
-      user_id,
-      name,
-      availableReferrals,
+    const { rows: payoutRows } = await client.query(insertPayoutQuery, [
+      user.id,
+      admin_telegram_id,
+      claimableReferrals,
+      pointRate,
       requestedAmount,
       bank_name,
       bank_account,
-      phone,
-      assignedTo,
+      account_holder_name,
     ]);
 
+    const newPayout: WithdrawalRequest = payoutRows[0];
+
+    // 7. Update claimed_referral_count on the user table atomically
+    const updateUserQuery = `
+      UPDATE users
+      SET 
+        claimed_referral_count = claimed_referral_count + $1,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $2;
+    `;
+
+    await client.query(updateUserQuery, [claimableReferrals, user.id]);
+
+    // Commit atomic transaction
     await client.query("COMMIT");
 
-    try {
-      const adminLookup = await client.query(
-        `SELECT telegram_id FROM users WHERE username = $1 LIMIT 1`,
-        [assignedTo],
-      );
+    await sendAdminPayoutMessage({
+      admin_telegram_id: admin_telegram_id,
+      payoutId: newPayout.id,
+      username: user.username,
+      name: user.first_name,
+      requestedAmount,
+      claimableReferrals,
+      pointRate,
+      bank_name,
+      bank_account,
+      account_holder_name
+    })
 
-      const adminTgId = adminLookup.rows[0]?.telegram_id;
-
-      if (adminTgId) {
-        const adminMsg =
-          `💰 <b>New Withdrawal Assignment</b>\n\n` +
-          `👤 <b>User:</b> ${name}\n` +
-          `🔢 <b>Referrals:</b> ${availableReferrals}\n` +
-          `💵 <b>Amount:</b> ${requestedAmount} ETB\n` +
-          `🏦 <b>Bank:</b> ${bank_name}\n` +
-          `🏦 <b>Bank Account:</b> ${bank_account}\n\n` +
-          `👉 <b>Assigned to you (@${assignedTo})</b>`;
-
-        // Send private message to the admin
-        await bot.telegram.sendMessage(adminTgId, adminMsg, {
-          parse_mode: "HTML",
-          ...Markup.inlineKeyboard([
-            Markup.button.webApp("Process Request", `${WEBAPP_URL}/admin`)
-          ])
-        });
-      } else {
-        logger.warn(
-          `Could not notify Admin @${assignedTo}: admin not found in users table.`,
-        );
-      }
-    } catch (notifyErr) {
-      logger.error(`⚠️ Admin notification failed: ${notifyErr instanceof Error ? notifyErr.message : String(notifyErr)}`);
-    }
-
-    logger.info(`✅ Withdrawal request submitted and assigned to ${assignedTo}`)
-    return res.json({
-      message: `✅ Withdrawal request submitted and assigned to ${assignedTo}`,
-      request: result.rows[0],
-    } as SendWithdrawalResponse);
+    return res.status(201).json({
+      message: "✅ Payout request submitted successfully",
+      payout_request: payoutRows[0],
+    });
   } catch (err) {
-    await client.query("ROLLBACK");
-    logger.error(`❌ Error creating withdrawal: ${err instanceof Error ? err.message : String(err)}`);
-    return res.status(500).json({ error: "Internal server error" });
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    if (client) await client.query("ROLLBACK").catch(() => undefined);
+    logger.error(`❌ Error creating payout request: ${errorMessage}`);
+    notifyAdminError(errorMessage, "payout request sender")
+    return res.status(500).json({ error: "Failed to process payout request" });
   } finally {
-    client.release();
+    client?.release();
   }
 };
 
+
 export const getAdminWithdrawals: RequestHandler = async (req, res) => {
-  const adminUsername = req.query.username;
+  const adminTelegramId = Number(req.query.telegram_id);
 
   try {
     const { rows } = await pool.query(
       `
-            SELECT * FROM withdrawal_requests WHERE status = 'pending' AND assigned_to = $1
+            SELECT * FROM payout_requests WHERE status = 'pending' AND admin_telegram_id = $1
         `,
-      [adminUsername],
+      [adminTelegramId],
     );
     res.json({ withdrawals: rows });
   } catch (err) {
-    logger.error(
-      `❌ Error fetching withdrawal requests for admin: 
-      ${err instanceof Error ? err.message : String(err)}`
-    );
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    logger.error(`❌ Error fetching withdrawal requests for admin: ${errorMessage}`);
+    notifyAdminError(errorMessage, "admin withdrawals fetcher")
     res.status(500).json({ message: "Server error" });
   }
   return;
 };
 
+
 export const processWithdrawal: RequestHandler = async (req, res) => {
-  const { id, user_Id } = req.body;
-  const client = await pool.connect();
+  const { payout_id, action, rejection_reason } = req.body;
+
+  if (!payout_id || !action || !["approve", "reject"].includes(action)) {
+    return res.status(400).json({ error: "Invalid or missing required parameters" });
+  }
+
+  let client: PoolClient | undefined;
 
   try {
+    client = await pool.connect();
     await client.query("BEGIN");
 
-    // Update withdrawal status
-    const withdrawalQuery = await client.query(
-      `UPDATE withdrawal_requests 
-       SET status = 'paid', processed_at = NOW() 
-       WHERE id = $1 
-       RETURNING requested_referrals, requested_amount`,
-      [id],
-    );
+    // 1. Lock and fetch the pending payout request along with user details
+    const payoutQuery = `
+      SELECT 
+        pr.id,
+        pr.user_id,
+        pr.admin_telegram_id,
+        pr.referrals_claimed,
+        pr.requested_amount,
+        pr.status,
+        u.telegram_id AS user_telegram_id,
+        u.first_name AS user_first_name,
+        u.username
+      FROM payout_requests pr
+      JOIN users u ON pr.user_id = u.id
+      WHERE pr.id = $1
+      FOR UPDATE OF pr;
+    `;
 
-    if (withdrawalQuery.rows.length === 0) {
-      throw new Error("Withdrawal record not found");
+    const { rows } = await client.query(payoutQuery, [payout_id]);
+
+    if (rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Payout request not found" });
     }
 
-    const { requested_referrals, requested_amount } = withdrawalQuery.rows[0];
+    const payout = rows[0];
 
-    // Update user's claimed referral count
-    await client.query(
-      `UPDATE users 
-       SET claimed_referral_count = claimed_referral_count + $1 
-       WHERE id = $2`,
-      [requested_referrals, user_Id],
-    );
+    // Ensure request is still pending
+    if (payout.status !== "pending") {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: `Request has already been processed (Status: ${payout.status})` });
+    }
 
-    // Get user's telegram_id for notification
-    const userQuery = await client.query(
-      `SELECT telegram_id FROM users WHERE id = $1`,
-      [user_Id],
-    );
-    const telegramId = userQuery.rows[0]?.telegram_id;
+    const nextStatus = action === "approve" ? "paid" : "rejected";
+
+    // 2. Update payout request status
+    const updatePayoutQuery = `
+      UPDATE payout_requests
+      SET 
+        status = $1::payment_request_status_type,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $2
+      RETURNING *;
+    `;
+
+    await client.query(updatePayoutQuery, [nextStatus, payout_id]);
+
+    // 3. If rejected, revert the claimed_referral_count back to user's balance
+    if (action === "reject") {
+      const revertUserQuery = `
+        UPDATE users
+        SET 
+          claimed_referral_count = GREATEST(0, claimed_referral_count - $1),
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $2;
+      `;
+      await client.query(revertUserQuery, [payout.referrals_claimed, payout.user_id]);
+    }
 
     await client.query("COMMIT");
-    res.json({ message: "Withdrawal marked as paid" });
 
-    // Send Telegram Notification (Post-Response)
-    if (telegramId) {
-      const message = `✅ *Withdrawal Successful!*\n\nYour request for *${Number(requested_amount).toFixed(2)} BIRR* has been processed. Please check your bank account.`;
+    // 4. Send Telegram Notifications (Post-Commit)
+    const amountFormatted = Number(payout.requested_amount).toFixed(2);
 
-      try {
-        await bot.telegram.sendMessage(telegramId, message, { parse_mode: "Markdown" })
-      } catch (error) {
-        logger.error(
-          `❌ Error to notify user after processing withdraw request: 
-          ${error instanceof Error ? error.message : String(error)}`
-        )
-      }
+    // User/admin Notice
+    if (action === "approve") {
+      await sendUserApprovedPayoutMessage({
+        user_telegram_id: payout.user_telegram_id,
+        amountFormatted,
+        referrals_claimed: payout.referrals_claimed
+      })
+
+      await sendAdminConfirmedPayoutMessage({
+        admin_telegram_id: payout.admin_telegram_id,
+        payoutId: payout.id,
+        username: payout.username,
+        name: payout.user_first_name
+      })
+    } else {
+      await sendUserRejectedPayoutMessage({
+        user_telegram_id: payout.user_telegram_id,
+        amountFormatted,
+        referrals_claimed: payout.referrals_claimed,
+        rejection_reason
+      })
+
+      await sendAdminRejectedPayoutMessage({
+        admin_telegram_id: payout.admin_telegram_id,
+        payoutId: payout.id,
+        referrals_claimed: payout.referrals_claimed,
+        username: payout.username,
+        name: payout.user_first_name
+      })
     }
-  } catch (error) {
-    await client.query("ROLLBACK");
-    logger.error(`❌ Error to process withdraw request: 
-      ${error instanceof Error ? error.message : String(error)}`);
-    res.status(500).json({ message: "Server error" });
+
+    return res.status(200).json({
+      message: `Payout request successfully ${action === "approve" ? "approved" : "rejected"}`,
+      status: nextStatus,
+    });
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    if (client) await client.query("ROLLBACK").catch(() => undefined);
+    logger.error(`❌ Error processing payout request: ${errorMessage}`);
+    notifyAdminError(errorMessage, "withdrawal request processer")
+    return res.status(500).json({ error: "Failed to process payout request" });
   } finally {
-    client.release();
+    client?.release();
   }
 };

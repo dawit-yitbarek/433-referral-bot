@@ -1,33 +1,35 @@
-import logger from "./logger.js";
-import type { EnvConfig } from "../types/index.js";
+import { z } from 'zod';
 import dotenv from "dotenv";
+import logger from './logger.js';
+
 dotenv.config();
 
-const config: EnvConfig = {
-  BOT_TOKEN: process.env.BOT_TOKEN!,
-  WEBAPP_URL: process.env.WEBAPP_URL!,
-  BACKEND_URL: process.env.BACKEND_URL!,
-  DATABASE_URL: process.env.DATABASE_URL!,
-  PORT: process.env.PORT!,
-  CHANNEL_ID: process.env.CHANNEL_ID!,
-  BOT_USERNAME: process.env.BOT_USERNAME!,
-  REFERRAL_VALUE: process.env.REFERRAL_VALUE!,
-  WITHDRAW_THRESHOLD: process.env.WITHDRAW_THRESHOLD!,
-};
-
-const missingVars: string[] = []
-Object.entries(config).forEach(([key, value]) => {
-  if (!value) {
-    missingVars.push(key);
-  }
+const envSchema = z.object({
+  BOT_TOKEN: z.string(),
+  WEBAPP_URL: z.string(),
+  BACKEND_URL: z.string(),
+  DATABASE_URL: z.string(),
+  PORT: z.string(),
+  CHANNEL_USERNAME: z.string(),
+  BOT_USERNAME: z.string(),
+  REFERRAL_VALUE: z.string(),
+  WITHDRAW_THRESHOLD: z.string(),
+  ADMIN: z.string(),
+  ERROR_RECEIVER_ADMIN_ID: z.string().optional(),
+  NODE_ENV: z.string(),
 });
 
-if (missingVars.length > 0) {
-  const errorMsg = `Missing required environment variables: ${missingVars.join(', ')}`;
-  logger.error(errorMsg);
-  throw new Error(errorMsg);
-}
+const parseEnv = () => {
+  const result = envSchema.safeParse(process.env);
 
+  if (!result.success) {
+    logger.error('❌ Invalid environment variables:');
+    logger.error(JSON.stringify(result.error.format(), null, 2));
+    process.exit(1);
+  }
+
+  return result.data;
+};
 
 export const {
   BOT_TOKEN,
@@ -35,8 +37,11 @@ export const {
   BACKEND_URL,
   DATABASE_URL,
   PORT,
-  CHANNEL_ID,
+  CHANNEL_USERNAME,
   BOT_USERNAME,
   REFERRAL_VALUE,
-  WITHDRAW_THRESHOLD
-} = config;
+  WITHDRAW_THRESHOLD,
+  ADMIN,
+  ERROR_RECEIVER_ADMIN_ID,
+  NODE_ENV
+} = parseEnv()

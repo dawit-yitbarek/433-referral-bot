@@ -1,16 +1,16 @@
 export interface WithdrawalRequest {
     id: number;
     user_id: number;
-    name: string;
-    requested_referrals: number;
+    admin_telegram_id: number;
+    referrals_claimed: number;
+    point_rate: number;
     requested_amount: number;
     bank_name: string;
     bank_account: string;
-    phone: string | null;
-    status: 'pending' | 'paid' | 'cancelled';
-    assigned_to: string;
+    account_holder_name: string;
+    status: 'pending' | 'paid' | 'rejected',
     created_at: Date;
-    processed_at: Date | null;
+    updated_at: Date;
 }
 
 export interface SendWithdrawalData {
@@ -27,8 +27,9 @@ export interface SendWithdrawalResponse {
 }
 
 export interface WithdrawalFormData {
-    name: string;
-    bank_name: string;
+    account_holder_name: string;
+    bank_name: banks | "";
     bank_account: string;
-    phone: string;
 }
+
+export type banks = 'cbe' | 'telebirr' | 'abyssinia'

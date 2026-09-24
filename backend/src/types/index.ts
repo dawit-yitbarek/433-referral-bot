@@ -1,13 +1,17 @@
 export interface User {
     id: number;
     telegram_id: number;
-    name: string;
+    first_name: string;
+    last_name: string | null;
     username: string | null;
     profile_photo: string | null;
     referred_by: number | null;
-    joined_telegram: boolean;
+    joined_channel: boolean;
+    reward_status: 'none' | 'awarded' | 'revoked'
+    referral_count: number;
     claimed_referral_count: number;
     created_at: Date;
+    updated_at: Date;
 }
 
 export interface Admin {
@@ -18,16 +22,16 @@ export interface Admin {
 export interface WithdrawalRequest {
     id: number;
     user_id: number;
-    name: string;
-    requested_referrals: number;
+    admin_telegram_id: number;
+    referrals_claimed: number;
+    point_rate: number;
     requested_amount: number;
     bank_name: string;
     bank_account: string;
-    phone: string | null;
-    status: 'pending' | 'paid';
-    assigned_to: string;
+    account_holder_name: string;
+    status: 'pending' | 'paid' | 'rejected';
     created_at: Date;
-    processed_at: Date | null;
+    updated_at: Date;
 }
 
 export interface UserDashboardRequest {
@@ -67,25 +71,12 @@ export interface WithdrawalHistoryResponse {
 
 export interface SendWithdrawalRequest {
     user_id: number;
-    name: string;
+    account_holder_name: string;
     bank_name: string;
     bank_account: string;
-    phone?: string;
 }
 
 export interface SendWithdrawalResponse {
     message: string;
     request: WithdrawalRequest;
-}
-
-export interface EnvConfig {
-    BOT_TOKEN: string;
-    WEBAPP_URL: string;
-    BACKEND_URL: string;
-    DATABASE_URL: string;
-    PORT: string;
-    CHANNEL_ID: string;
-    BOT_USERNAME: string;
-    REFERRAL_VALUE: string;
-    WITHDRAW_THRESHOLD: string;
 }

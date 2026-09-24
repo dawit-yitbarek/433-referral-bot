@@ -1,71 +1,70 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, XCircle, Copy, Check } from "lucide-react";
+import { CheckCircle, XCircle, Copy, Check, X } from "lucide-react";
 import { publicApi } from "../components/Api";
-import SuperAdmin from "../components/SuperAdmin"
 import LoadingState from "../components/Loading";
 import ErrorState from "../components/Error";
-import type { WithdrawalRequest } from "../types/withdrawal";
 import type { MessageState } from "../types/index";
-import { useApp } from "../context/UserContext";
+import { useAdminWithdraw } from "../context/AdminContext";
+import type { WithdrawalRequest } from "../types/withdrawal";
+
+
+interface selectedItemType {
+    request: WithdrawalRequest;
+    type: 'reject' | 'approve'
+}
 
 export default function AdminPage() {
-    const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
     const [processingId, setProcessingId] = useState<number | null>(null);
-    const [alert, setAlert] = useState<MessageState["type"] | null>();
+    const [alert, setAlert] = useState<MessageState["type"] | null>(null);
     const [copiedId, setCopiedId] = useState<number | null>(null);
-    const { isSuperAdmin, username } = useApp()
 
-    // Fetch withdrawals for current admin
-    const fetchWithdrawals = async (username: string) => {
-        if (!username) { setLoading(false); return };
-        setLoading(true);
-        try {
-            const res = await publicApi.get(`/api/withdrawals/admin?username=${username}`);
-            setWithdrawals(res.data.withdrawals);
-            setError(null);
-        } catch (err) {
-            console.error("Error fetching withdrawals:", err);
-            setError("Failed to fetch withdrawals.");
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Rejection modal state
+    const [selectedItem, setSelectedItem] = useState<selectedItemType | null>(null)
+    const [rejectionReason, setRejectionReason] = useState("");
 
-    useEffect(() => {
-        if (isSuperAdmin) {
-            setLoading(false);
-            return;
-        }
-        fetchWithdrawals(username || "");
-    }, []);
+    const { user, error, loading, withdrawalRequests, setWithdrawalRequests, refresh } = useAdminWithdraw();
 
-    // Handle withdrawal processing
-    const handleProcess = async (id: number, user_Id: number) => {
-        if (processingId === id) return;
-        setProcessingId(id);
+    if (loading) return <LoadingState message="Loading admin data..." />;
+    if (error || !user) return <ErrorState retry={() => refresh()} />;
 
-        try {
-            await publicApi.post("/api/withdrawals/process", { id, user_Id });
-            setWithdrawals((prev) => prev.filter((w) => w.id !== id));
-            showAlert("success");
-        } catch (err) {
-            console.error("Error processing withdrawal:", err);
-            showAlert("error");
-        } finally {
-            setProcessingId(null);
-        }
-    };
-
-    // Alert handler
+    // Trigger floating alert
     const showAlert = (type: MessageState["type"]) => {
         setAlert(type);
         setTimeout(() => setAlert(null), 4000);
     };
 
-    // Copy helper
+    // Process approval or rejection
+    const handleProcess = async (
+        payout_id: number,
+        action: "approve" | "reject",
+        reason?: string
+    ) => {
+        if (processingId === payout_id) return;
+        setProcessingId(payout_id);
+
+        try {
+            await publicApi.post("/api/withdrawals/process", {
+                payout_id,
+                admin_telegram_id: user.telegram_id,
+                action,
+                rejection_reason: reason || undefined,
+            });
+
+            // Remove processed request from state list
+            setWithdrawalRequests((prev) => prev.filter((w) => w.id !== payout_id));
+            showAlert(action === "approve" ? "approve_success" : "reject_success");
+        } catch (err) {
+            console.error(`Error processing withdrawal (${action}):`, err);
+            showAlert("error");
+        } finally {
+            setProcessingId(null);
+            setSelectedItem(null);
+            setRejectionReason("");
+        }
+    };
+
+    // Copy bank account to clipboard
     const handleCopy = async (id: number, text: string) => {
         try {
             await navigator.clipboard.writeText(text);
@@ -76,14 +75,12 @@ export default function AdminPage() {
         }
     };
 
-    if (loading) return <LoadingState message="Loading admin data..." />;
-    if (error) return <ErrorState retry={() => fetchWithdrawals(username!)} />;
-
-    if (isSuperAdmin) return <SuperAdmin />;
-
     return (
-        <div className={`min-h-screen bg-[#000000] text-white pb-28 px-4 font-sans relative overflow-hidden ${alert ? "pt-16" : "pt-6"}`}>
-            {/* Floating alert */}
+        <div
+            className={`min-h-screen bg-[#000000] text-white pb-28 px-4 font-sans relative overflow-hidden ${alert ? "pt-16" : "pt-6"
+                }`}
+        >
+            {/* Floating Alert Notifications */}
             <AnimatePresence>
                 {alert && (
                     <motion.div
@@ -91,15 +88,21 @@ export default function AdminPage() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.3 }}
-                        className={`fixed top-4 inset-x-0 z-50 flex justify-center`}
+                        className="fixed top-4 inset-x-0 z-50 flex justify-center px-4"
                     >
-                        {alert === "success" ? (
-                            <div className="bg-green-500/20 text-green-400 flex items-center gap-2 mb-4 p-3 rounded-xl ">
-                                <CheckCircle /> Withdrawal marked as paid and user notified!
+                        {["approve_success", "reject_success"].includes(alert) && (
+                            <div className="bg-green-500/20 text-green-400 border border-green-500/30 flex items-center gap-2 p-3 rounded-xl shadow-lg">
+                                <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                                {`${alert === "approve_success" ?
+                                    "Withdrawal marked as paid and user notified!"
+                                    : "Withdrawal rejected and referrals refunded!"}`
+                                }
                             </div>
-                        ) : (
-                            <div className="bg-red-500/20 text-red-400 flex items-center gap-2 mb-4 p-3 rounded-xl ">
-                                <XCircle /> Failed to mark as paid. Please try again.
+                        )}
+
+                        {alert === "error" && (
+                            <div className="bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-2 p-3 rounded-xl shadow-lg">
+                                <XCircle className="w-5 h-5 flex-shrink-0" /> Failed to process request. Please try again.
                             </div>
                         )}
                     </motion.div>
@@ -110,30 +113,45 @@ export default function AdminPage() {
                 Pending Withdrawals
             </h1>
 
-            {withdrawals.length === 0 ? (
+            {!withdrawalRequests || withdrawalRequests.length === 0 ? (
                 <p className="text-gray-400 text-center mt-10">
                     No pending withdrawals assigned to you.
                 </p>
             ) : (
                 <div className="space-y-4">
-                    {withdrawals.map((item) => (
+                    {withdrawalRequests.map((item) => (
                         <motion.div
                             key={item.id}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3 }}
-                            className="bg-[#1A1A1A] p-4 rounded-2xl shadow-md flex justify-between items-center"
+                            className="bg-[#1A1A1A] p-4 rounded-2xl shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4 border border-white/5"
                         >
-                            <div>
-                                <p className="text-white font-semibold">
-                                    {Number(item.requested_amount).toFixed(2)} BIRR
+                            {/* Left Column: Payout Info */}
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <p className="text-white font-bold text-lg">
+                                        {Number(item.requested_amount).toLocaleString('en-US', {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2,
+                                        })} ETB
+                                    </p>
+                                    <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-md border border-purple-500/30">
+                                        {item.referrals_claimed} refs
+                                    </span>
+                                </div>
+
+                                <p className="text-gray-300 text-sm font-medium">
+                                    Account Holder: <span className="text-white">{item.account_holder_name}</span>
                                 </p>
+
                                 <p className="text-gray-400 text-sm flex items-center gap-2">
-                                    {item.name} | {item.bank_name} |{" "}
-                                    <span className="font-mono">{item.bank_account}</span>
+                                    <span>{item.bank_name}</span> |{" "}
+                                    <span className="font-mono text-gray-200">{item.bank_account}</span>
                                     <button
                                         onClick={() => handleCopy(item.id, item.bank_account)}
-                                        className="text-gray-400 hover:text-[#A259FF] transition"
+                                        className="text-gray-400 hover:text-[#A259FF] transition p-1"
+                                        title="Copy Account Number"
                                     >
                                         {copiedId === item.id ? (
                                             <Check className="w-4 h-4 text-green-400 transition-transform duration-300" />
@@ -142,25 +160,110 @@ export default function AdminPage() {
                                         )}
                                     </button>
                                 </p>
-                                {item.phone && (
-                                    <p className="text-gray-400 text-sm">Phone: {item.phone}</p>
-                                )}
                             </div>
 
-                            <button
-                                onClick={() => handleProcess(item.id, item.user_id)}
-                                disabled={processingId === item.id}
-                                className={`px-4 py-2 rounded-xl font-bold transition ${processingId === item.id
-                                    ? "bg-gray-600 cursor-not-allowed"
-                                    : "bg-green-500 hover:bg-green-600"
-                                    }`}
-                            >
-                                {processingId === item.id ? "Confirming..." : "Confirm"}
-                            </button>
+                            {/* Right Column: Action Buttons */}
+                            <div className="flex items-center gap-2 self-end md:self-auto">
+                                <button
+                                    onClick={() =>
+                                        setSelectedItem({ request: item, type: "reject" })
+                                    }
+                                    disabled={processingId == item.id}
+                                    className={`px-4 py-2 rounded-xl font-bold transition text-sm ${processingId == item.id
+                                        ? "bg-gray-600 cursor-not-allowed"
+                                        : "bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30"}`}
+                                >
+                                    Reject
+                                </button>
+
+                                <button
+                                    onClick={() =>
+                                        setSelectedItem({ request: item, type: "approve" })
+                                    }
+                                    disabled={processingId == item.id}
+                                    className={`px-4 py-2 rounded-xl font-bold transition text-sm ${processingId == item.id
+                                        ? "bg-gray-600 cursor-not-allowed"
+                                        : "bg-green-500 hover:bg-green-600 text-black"
+                                        }`}
+                                >
+                                    Confirm
+                                </button>
+                            </div>
                         </motion.div>
                     ))}
                 </div>
             )}
+
+            {/* Selected item Modal */}
+            <AnimatePresence>
+                {selectedItem && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-[#1A1A1A] p-6 rounded-2xl border border-white/10 max-w-md w-full relative shadow-xl"
+                        >
+                            <button
+                                onClick={() => setSelectedItem(null)}
+                                className="absolute top-4 right-4 text-gray-400 hover:text-white"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+
+                            <h2 className="text-xl font-bold text-white mb-2">
+                                {selectedItem.type === 'reject' ? 'Reject Payout' : 'Approve Payout'}
+                            </h2>
+                            <p className="text-gray-400 text-sm mb-4">
+                                {selectedItem.type === 'reject' ? (
+                                    <>
+                                        Rejecting payout for{' '}
+                                        <span className="text-white font-semibold">
+                                            {selectedItem.request.account_holder_name}
+                                        </span>
+                                        . This will refund their claimed referrals back to their balance.
+                                    </>
+                                ) : (
+                                    <>
+                                        Approving payout for{' '}
+                                        <span className="text-white font-semibold">
+                                            {selectedItem.request.account_holder_name}
+                                        </span>
+                                        .
+                                    </>
+                                )}
+                            </p>
+
+                            {selectedItem.type === "reject" && <textarea
+                                value={rejectionReason}
+                                onChange={(e) => setRejectionReason(e.target.value)}
+                                placeholder="Reason for rejection (optional, e.g. Incorrect account name)"
+                                rows={3}
+                                className="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-purple-500 mb-4 resize-none"
+                            />}
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setSelectedItem(null)}
+                                    className="flex-1 py-2.5 rounded-xl font-semibold bg-gray-800 text-gray-300 hover:bg-gray-700 transition text-sm"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => handleProcess(selectedItem.request.id, selectedItem.type, rejectionReason)}
+                                    disabled={processingId === selectedItem.request.id}
+                                    className={`flex-1 py-2.5 rounded-xl font-semibold transition text-sm disabled:opacity-50 
+                                        ${selectedItem.type === "approve" ? "bg-green-500 hover:bg-green-600 text-black" :
+                                            "bg-red-500 hover:bg-red-600 text-white"}
+                                            `}
+                                >
+                                    {processingId === selectedItem.request.id ? "Confirming..." : "Confirm"}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

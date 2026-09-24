@@ -1,6 +1,7 @@
 import pkg from 'pg';
 import { DATABASE_URL } from './env.js';
 import logger from './logger.js';
+import { notifyAdminError } from '../utils/notifyAdminError.js';
 
 const { Pool } = pkg
 export const pool = new Pool({
@@ -12,5 +13,7 @@ export const pool = new Pool({
 
 // Handle pool errors
 pool.on('error', (err, _client) => {
-  logger.error(`Unexpected error on idle client: ${err.message || err}`);
+  const errorMessage = err.message || err;
+  logger.error(`Unexpected error on idle client: ${errorMessage}`);
+  notifyAdminError(errorMessage, "Pool error")
 });

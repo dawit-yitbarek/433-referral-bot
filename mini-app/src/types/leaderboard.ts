@@ -1,18 +1,17 @@
-export interface LeaderboardUser {
-    telegram_id: number;
-    name: string;
-    profile_photo: string | null;
-    referral_count: number;
-    rank: number;
-}
+import type { User } from "../types/user"
 
 export interface LeaderboardData {
-    topThree: LeaderboardUser[];
-    others: LeaderboardUser[];
-    currentUser: LeaderboardUser | null;
+    topThree: User[];
+    others: User[];
+    currentUser: User | null;
+    isUserInTopTen: boolean;
 }
 
 export interface LeaderboardResponse {
-    topTen: LeaderboardUser[];
-    currentUser: LeaderboardUser | null;
+    topTen: User[];
+    currentUser: User;
+    channelUsername: string;
+    botUsername: string;
+    withdrawThreshold: number;
+    referralValue: number;
 }

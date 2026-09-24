@@ -1,68 +1,42 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import LoadingState from "../components/Loading";
 import ErrorState from "../components/Error";
 import { publicApi } from "../components/Api";
 import { CheckCircle, XCircle } from "lucide-react";
 import { useApp } from "../context/UserContext";
-import type { WithdrawalRequest, WithdrawalFormData } from "../types/withdrawal";
+import { useWithdraw } from "../context/WithdrawContext";
+import type { WithdrawalFormData, banks } from "../types/withdrawal";
 import type { MessageState } from "../types/index";
+import JoinChannelBlocker from "../components/JoinChannelBlocker";
 
 export default function Withdraw() {
-  const [withdrawHistory, setWithdrawHistory] = useState<WithdrawalRequest[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState<boolean>(true);
-  const [loadingHistoryError, setLoadingHistoryError] = useState<boolean>(false);
-  const [refresh, setRefresh] = useState<number>(0);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [message, setMessage] = useState<MessageState>({ text: "", type: "" });
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [form, setForm] = useState<WithdrawalFormData>({
-    name: "",
+    account_holder_name: "",
     bank_name: "",
     bank_account: "",
-    phone: "",
   });
-  const { user, loading, error, initApp } = useApp();
+  const { user, loading, error, initApp, channelUsername, withdrawThreshold, referralValue } = useApp();
+  const { withdrawalHistory, loading: loadingWithdraw, error: withdrawError, refresh } = useWithdraw()
+  const banks: banks[] = ['cbe', 'telebirr', 'abyssinia']
 
-  const minWithdraw = Number(import.meta.env.VITE_WITHDRAW_THRESHOLD);
-  const referralPoint = Number(import.meta.env.VITE_REFERRAL_POINT);
-
-  // Load user and withdrawal history
-  useEffect(() => {
-    const loadWithdrawHistory = async () => {
-      setLoadingHistory(true);
-      setLoadingHistoryError(false);
-      try {
-        if (user?.id) {
-          const historyRes = await publicApi.get(
-            `/api/withdrawals?user_id=${user.id}`,
-          );
-          setWithdrawHistory(historyRes.data.withdrawals);
-        }
-      } catch (err) {
-        console.error("Error loading withdraw history ", err);
-        setLoadingHistoryError(true);
-      } finally {
-        setLoadingHistory(false);
-      }
-    };
-
-    loadWithdrawHistory();
-  }, [user, refresh]);
 
   if (loading) return <LoadingState message="Loading withdraw page" />;
-  if (error) return <ErrorState retry={initApp} />;
+  if (error || !user) return <ErrorState retry={refresh} />;
 
-  const balance = (user?.unclaimed_referrals ?? 0) * referralPoint;
-  const progress = Math.min((balance / minWithdraw) * 100, 100);
+  const balance = Math.max((user.referral_count - user.claimed_referral_count) * referralValue, 0);
+  const progress = Math.min((balance / withdrawThreshold) * 100, 100);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLSelectElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleWithdraw = async () => {
     if (
-      !form.name.trim() ||
+      !form.account_holder_name.trim() ||
       !form.bank_name.trim() ||
       !form.bank_account.trim()
     ) {
@@ -79,10 +53,9 @@ export default function Withdraw() {
     try {
       await publicApi.post("/api/withdrawals", {
         user_id: user?.id,
-        name: form.name,
+        account_holder_name: form.account_holder_name,
         bank_name: form.bank_name,
         bank_account: form.bank_account,
-        phone: form.phone,
       });
 
       setMessage({
@@ -91,7 +64,7 @@ export default function Withdraw() {
       });
 
       setShowModal(false);
-      setForm({ name: "", bank_name: "", bank_account: "", phone: "" });
+      setForm({ account_holder_name: "", bank_name: "", bank_account: "" });
       setSubmitting(false);
       initApp();
 
@@ -118,7 +91,10 @@ export default function Withdraw() {
         <p className="text-gray-400 text-sm">
           Your Balance:
           <span className="font-bold text-white ml-2">
-            {balance.toFixed(2)} BIRR
+            {balance.toLocaleString('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })} BIRR
           </span>
         </p>
 
@@ -130,25 +106,28 @@ export default function Withdraw() {
           ></div>
         </div>
         <p className="text-gray-400 text-xs mt-1">
-          {balance < minWithdraw
-            ? `${(minWithdraw - balance).toFixed(2)} BIRR left to reach minimum withdrawal`
+          {balance < withdrawThreshold
+            ? `${(withdrawThreshold - balance).toLocaleString('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })} BIRR left to reach minimum withdrawal`
             : "You can withdraw now!"}
         </p>
 
         {/* Withdraw Button */}
         <button
-          className={`w-full py-3 rounded-xl font-bold transition ${balance >= minWithdraw
+          className={`w-full py-3 rounded-xl font-bold transition ${balance >= withdrawThreshold
             ? "bg-purple-500 hover:bg-purple-600"
             : "bg-gray-600 cursor-not-allowed"
             }`}
-          disabled={balance < minWithdraw}
+          disabled={balance < withdrawThreshold}
           onClick={() => setShowModal(true)}
         >
           Withdraw Now
         </button>
       </div>
 
-      {/* Withdraw History */}
+
       {/* Withdraw History */}
       <div className="mt-8">
         <h2 className="text-xl font-semibold text-purple-400">
@@ -156,29 +135,29 @@ export default function Withdraw() {
         </h2>
 
         <div className="space-y-3 min-h-[100px] flex flex-col justify-center">
-          {loadingHistory ? (
+          {loadingWithdraw ? (
             <div className="text-center py-6">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500 mx-auto mb-2"></div>
               <p className="text-gray-400 text-sm">Fetching history...</p>
             </div>
-          ) : loadingHistoryError ? (
+          ) : withdrawError ? (
             <div className="bg-red-500/10 border border-red-500/50 p-4 rounded-xl text-center">
               <p className="text-red-400 text-sm mb-2">
                 Failed to load history.
               </p>
               <button
-                onClick={() => setRefresh((prev) => prev + 1)}
+                onClick={refresh}
                 className="text-xs bg-red-500/20 hover:bg-red-500/40 text-red-200 px-3 py-1 rounded-lg transition"
               >
                 Try Again
               </button>
             </div>
-          ) : withdrawHistory.length === 0 ? (
+          ) : !withdrawalHistory || withdrawalHistory?.length === 0 ? (
             <p className="text-gray-400 text-center py-6">
               No withdrawal history yet.
             </p>
           ) : (
-            withdrawHistory.map((item) => (
+            withdrawalHistory && withdrawalHistory.map((item) => (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -187,11 +166,14 @@ export default function Withdraw() {
               >
                 <div>
                   <p className="text-white font-semibold">
-                    {Number(item.requested_amount).toFixed(2)} BIRR
+                    {Number(item.requested_amount).toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })} BIRR
                   </p>
                   <p className="text-gray-400 text-xs">
                     {new Date(
-                      item.processed_at || item.created_at,
+                      item.updated_at || item.created_at,
                     ).toLocaleDateString(undefined, {
                       year: "numeric",
                       month: "short",
@@ -202,7 +184,7 @@ export default function Withdraw() {
                 <span
                   className={`px-3 py-1 rounded-full text-[10px] uppercase font-bold ${item.status === "paid"
                     ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                    : item.status === "cancelled"
+                    : item.status === "rejected"
                       ? "bg-red-500/20 text-red-400 border border-red-500/30"
                       : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
                     }`}
@@ -229,37 +211,36 @@ export default function Withdraw() {
 
             <input
               type="text"
-              name="name"
+              name="account_holder_name"
               placeholder="Full Name"
-              value={form.name}
+              value={form.account_holder_name}
               onChange={handleChange}
               required
               className="w-full p-3 rounded-xl bg-[#000000] border border-[#5B2EFF] text-white focus:outline-none"
             />
-            <input
-              type="text"
+            <select
               name="bank_name"
-              placeholder="Bank Name"
               value={form.bank_name}
               onChange={handleChange}
               required
-              className="w-full p-3 rounded-xl bg-[#000000] border border-[#5B2EFF] text-white focus:outline-none"
-            />
+              className="w-full p-3 rounded-xl bg-[#000000] border border-[#5B2EFF] text-white focus:outline-none focus:ring-2 focus:ring-[#5B2EFF]"
+            >
+              <option value="" disabled hidden>
+                Select Bank
+              </option>
+              {banks.map((bank) => (
+                <option key={bank} value={bank} className="bg-[#1A1A1A] text-white">
+                  {bank}
+                </option>
+              ))}
+            </select>
             <input
               type="text"
               name="bank_account"
-              placeholder="Bank Account"
+              placeholder={form.bank_name === 'telebirr' ? "Phone Number" : "Bank Account"}
               value={form.bank_account}
               onChange={handleChange}
               required
-              className="w-full p-3 rounded-xl bg-[#000000] border border-[#5B2EFF] text-white focus:outline-none"
-            />
-            <input
-              type="text"
-              name="phone"
-              placeholder="Phone (Optional)"
-              value={form.phone}
-              onChange={handleChange}
               className="w-full p-3 rounded-xl bg-[#000000] border border-[#5B2EFF] text-white focus:outline-none"
             />
 
@@ -299,6 +280,13 @@ export default function Withdraw() {
             </div>
           </motion.div>
         </div>
+      )}
+
+      {!user.joined_channel && (
+        <JoinChannelBlocker
+          channelLink={`https://t.me/${channelUsername}`}
+          onReload={initApp}
+        />
       )}
     </div>
   );

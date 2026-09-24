@@ -6,12 +6,17 @@ export interface Admin {
 export interface User {
     id: number;
     telegram_id: number;
-    name: string;
+    first_name: string;
+    last_name: string | null;
+    username: string | null;
     profile_photo: string | null;
-    total_referrals: number;
-    claimed_referrals: number;
-    unclaimed_referrals: number;
-    hasJoined: boolean;
+    referred_by: number;
+    joined_channel: boolean;
+    reward_status: 'none' | 'awarded' | 'revoked';
+    referral_count: number;
+    claimed_referral_count: number;
+    created_at: Date;
+    updated_at: Date;
 }
 
 export interface UserSyncResponse {

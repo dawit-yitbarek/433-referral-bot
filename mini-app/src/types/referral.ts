@@ -1,29 +1,20 @@
-export interface ReferralUser {
-    id: number;
-    telegram_id: number;
-    name: string;
-    username: string | null;
-    profile_photo: string | null;
-    joined_telegram: boolean;
-    referral_count: number;
-    created_at: string;
-}
+import type { User } from "./user"
 
 export interface ReferralsPageState {
-    users: ReferralUser[];
+    users: User[];
     page: number;
     limit: number;
     hasMore: boolean;
     loading: boolean;
     userError: string | null;
     totalUsers: number | null;
-    selectedUser: ReferralUser | null;
-    referrals: ReferralUser[];
+    selectedUser: User | null;
+    referrals: User[];
     refLoading: boolean;
     refError: string | null;
     modalOpen: boolean;
     searchQuery: string;
-    searchResults: ReferralUser[];
+    searchResults: User[];
     searching: boolean;
     searchError: string | null;
     sortBy: 'highest' | 'lowest' | 'latest' | 'oldest';

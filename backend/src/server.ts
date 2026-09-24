@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import userRoutes from './routes/userRoutes.js';
 import leaderboardRoutes from './routes/leaderboardRoutes.js';
 import withdrawRoutes from './routes/withdrawRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
@@ -22,7 +21,6 @@ app.use(cors({
 
 app.use(express.json())
 
-app.use('/api/user', userRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/withdrawals', withdrawRoutes);
 app.use('/api/admin', adminRoutes);

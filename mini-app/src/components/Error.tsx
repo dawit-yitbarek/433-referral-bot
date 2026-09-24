@@ -31,7 +31,7 @@ export default function ErrorState({ retry }: { retry: () => void }) {
           className="text-center text-[#FF6B9C] text-lg sm:text-xl font-semibold mb-6"
           transition={{ duration: 1.2, repeat: Infinity }}
         >
-          Oops! Something went wrong.
+          {"Oops! Something went wrong."}
         </motion.p>
 
         {/* Retry button */}
