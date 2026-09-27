@@ -77,6 +77,7 @@ BOT_TOKEN=your_telegram_bot_token
 WEBAPP_URL=https://your-webapp-url.example
 BACKEND_URL=https://your-backend-url.example
 DATABASE_URL=postgres://user:pass@host:5432/dbname
+REDIS_URL=your redis url
 CHANNEL_USERNAME=your_channel_username
 CHANNEL_ID=your_channel_id
 BOT_USERNAME=your_bot_username
