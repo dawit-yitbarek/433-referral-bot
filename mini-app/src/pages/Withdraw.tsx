@@ -264,6 +264,7 @@ export default function Withdraw() {
             <div className="flex justify-between mt-4">
               <button
                 className="px-4 py-2 rounded-xl bg-gray-600 hover:bg-gray-700"
+                disabled={submitting}
                 onClick={() => setShowModal(false)}
               >
                 Cancel

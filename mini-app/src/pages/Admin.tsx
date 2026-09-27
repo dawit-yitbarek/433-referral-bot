@@ -245,6 +245,7 @@ export default function AdminPage() {
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => setSelectedItem(null)}
+                                    disabled={processingId === selectedItem.request.id}
                                     className="flex-1 py-2.5 rounded-xl font-semibold bg-gray-800 text-gray-300 hover:bg-gray-700 transition text-sm"
                                 >
                                     Cancel

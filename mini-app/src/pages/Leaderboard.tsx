@@ -48,7 +48,7 @@ export default function Leaderboard() {
                 </Avatar>
 
                 <p className="text-white text-sm font-semibold truncate max-w-[80px] text-center">
-                  {topThree[1].first_name} {String(topThree[1].telegram_id) === String(telegram_id) && "(You))"}
+                  {topThree[1].first_name}
                 </p>
                 <p className="text-yellow-400 text-lg font-bold">
                   {topThree[1].referral_count.toLocaleString()} rfs

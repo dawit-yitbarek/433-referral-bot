@@ -11,7 +11,7 @@ export default function UsersPage() {
   const [state, setState] = useState<ReferralsPageState>({
     users: [],
     page: 1,
-    limit: 1,
+    limit: 50,
     hasMore: true,
     loading: false,
     userError: null,

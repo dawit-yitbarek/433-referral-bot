@@ -1,7 +1,6 @@
 import { Telegraf, Markup } from "telegraf";
-import type { Chat } from "telegraf/types"
 import { pool } from "../config/db.js";
-import { BOT_TOKEN, WEBAPP_URL, CHANNEL_USERNAME, BOT_USERNAME } from "../config/env.js";
+import { BOT_TOKEN, WEBAPP_URL, CHANNEL_USERNAME, CHANNEL_ID, BOT_USERNAME } from "../config/env.js";
 import { hasJoinedChannel } from "../utils/checkChannelJoin.js";
 import logger from "../config/logger.js";
 import type { User } from "../types/index.js";
@@ -108,10 +107,10 @@ bot.start(async (ctx) => {
 
 bot.on("chat_member", async (ctx) => {
   const update = ctx.chatMember;
-  const channelChat = ctx.chat as Chat.ChannelChat;
-  const channelUsername = channelChat.username;
+  const channelId = ctx.chat.id
   const userId = update.new_chat_member.user.id;
-  if (channelUsername !== CHANNEL_USERNAME) return;
+
+  if (channelId !== Number(CHANNEL_ID)) return;
 
   const newStatus = update.new_chat_member.status;
   const oldStatus = update.old_chat_member.status;
@@ -140,7 +139,7 @@ bot.action("show_referral", async (ctx) => {
     await ctx.reply(
       `🎁 Your referral link:\n<code>https://t.me/${BOT_USERNAME}?start=${userId}</code>`,
       {
-        parse_mode: 'HTML',
+        parse_mode: "HTML",
         ...Markup.inlineKeyboard([
           [Markup.button.webApp("🌐 Open Mini App", WEBAPP_URL)],
         ]),
@@ -148,13 +147,13 @@ bot.action("show_referral", async (ctx) => {
     );
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err)
-    logger.error(`❌ Error showing referral link: ${errorMessage}`);
-    notifyAdminError(errorMessage, "bot show_referral handler")
     try {
       await ctx.reply(
         "⚠️ Could not show your referral link. Please try again.",
       );
     } catch (_) { }
+    logger.error(`❌ Error showing referral link: ${errorMessage}`);
+    notifyAdminError(errorMessage, "bot show_referral handler")
   }
 });
 

@@ -78,6 +78,7 @@ WEBAPP_URL=https://your-webapp-url.example
 BACKEND_URL=https://your-backend-url.example
 DATABASE_URL=postgres://user:pass@host:5432/dbname
 CHANNEL_USERNAME=your_channel_username
+CHANNEL_ID=your_channel_id
 BOT_USERNAME=your_bot_username
 REFERRAL_VALUE=5
 WITHDRAW_THRESHOLD=500

@@ -3,6 +3,7 @@ import cors from 'cors';
 import leaderboardRoutes from './routes/leaderboardRoutes.js';
 import withdrawRoutes from './routes/withdrawRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import imageRoutes from './routes/imageRoutes.js';
 import { WEBAPP_URL } from './config/env.js';
 import { handleTelegramUpdate } from './bot/webhookHandler.js';
 
@@ -24,6 +25,7 @@ app.use(express.json())
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/withdrawals', withdrawRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/image', imageRoutes);
 
 // Health check
 app.get('/health', (_req, res) => res.send('OK'));

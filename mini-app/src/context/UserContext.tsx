@@ -33,6 +33,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (!telegramUser) throw new Error("Telegram data missing");
 
       const { id } = telegramUser;
+      const userProfilePhoto = telegramUser.photo_url || null
 
       const [adminRes, leaderboardRes] = await Promise.all([
         publicApi.get(`/api/admin/check-admin?telegram_id=${id}`),
@@ -49,6 +50,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setReferralValue(referralValue ?? 0);
 
       // Set User & Roles
+      currentUser.profile_photo = userProfilePhoto
       setUser(currentUser);
       setIsAdmin(!!adminRes.data?.isAdmin);
       const isUserInTopTen = topTen.some((user) => String(user.telegram_id) === String(id));

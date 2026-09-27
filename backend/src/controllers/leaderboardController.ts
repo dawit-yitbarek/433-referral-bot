@@ -2,7 +2,7 @@ import type { RequestHandler } from "express";
 import logger from "../config/logger.js";
 import { pool } from "../config/db.js";
 import type { User } from "../types/index.js";
-import { CHANNEL_USERNAME, BOT_USERNAME, WITHDRAW_THRESHOLD, REFERRAL_VALUE } from "../config/env.js";
+import { CHANNEL_USERNAME, BOT_USERNAME, WITHDRAW_THRESHOLD, REFERRAL_VALUE, BACKEND_URL } from "../config/env.js";
 import { notifyAdminError } from "../utils/notifyAdminError.js";
 
 export const getLeaderboard: RequestHandler = async (req, res) => {
@@ -30,6 +30,10 @@ export const getLeaderboard: RequestHandler = async (req, res) => {
       const { rows: userRows } = await pool.query<User>(userQuery, [telegramId]);
       currentUser = userRows[0];
     }
+
+    rows.forEach((user) => {
+      user.profile_photo = `${BACKEND_URL}/api/image/user?telegram_id=${user.telegram_id}`
+    })
 
     res.json({
       topTen: rows,

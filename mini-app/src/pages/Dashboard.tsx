@@ -121,10 +121,10 @@ export default function Dashboard() {
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.4 }}
         onClick={() => navigate("/withdraw")}
-        className={`w-full mt-8 py-4 rounded-3xl font-semibold text-white ${eligible_to_withdraw
-          ? "bg-gradient-to-r from-[#A259FF] to-[#5B2EFF] shadow-[0_0_30px_rgba(162,89,255,0.5)] hover:opacity-90"
-          : "bg-[#0D0D0D] border border-[#1A1A1A] text-[#808080] cursor-not-allowed"
-          } transition-all duration-300`}
+        className={`w-full mt-8 py-4 rounded-3xl font-semibold transition-all duration-300 ${eligible_to_withdraw
+          ? "bg-gradient-to-r from-[#B46AFF] to-[#6E3BFF] text-white shadow-[0_0_25px_rgba(162,89,255,0.6)] hover:shadow-[0_0_40px_rgba(162,89,255,0.9)] hover:scale-[1.02] active:scale-[0.98]"
+          : "bg-[#141414] border border-[#262626] text-[#666666] cursor-not-allowed"
+          }`}
         disabled={!eligible_to_withdraw}
       >
         {eligible_to_withdraw
