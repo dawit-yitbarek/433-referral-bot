@@ -7,7 +7,6 @@ export async function hasJoinedChannel(userId: number) {
     try {
         const formattedChannel = CHANNEL_USERNAME.startsWith("@") ? CHANNEL_USERNAME : `@${CHANNEL_USERNAME}`;
         const member = await bot.telegram.getChatMember(formattedChannel, userId);
-        console.log("The user status: ", member.status)
         return ["member", "administrator", "creator"].includes(member.status);
     } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err);

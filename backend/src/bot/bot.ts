@@ -1,4 +1,5 @@
 import { Telegraf, Markup } from "telegraf";
+import { DatabaseError } from "pg";
 import { pool } from "../config/db.js";
 import { BOT_TOKEN, WEBAPP_URL, CHANNEL_USERNAME, CHANNEL_ID, BOT_USERNAME } from "../config/env.js";
 import { hasJoinedChannel } from "../utils/checkChannelJoin.js";
@@ -18,8 +19,11 @@ bot.start(async (ctx) => {
     const lastName = ctx.from.last_name || null
     const username = ctx.from.username || "";
     const args = ctx.message.text.split(" ");
-    const referrerId = args[1] && !isNaN(Number(args[1])) ? parseInt(args[1], 10) : null;
+    let referrerId = args[1] && !isNaN(Number(args[1])) ? parseInt(args[1], 10) : null;
     const displayName = firstName || username || "friend";
+    if (referrerId === userId) {
+      referrerId = null; // Ignore self-referrals
+    }
 
     // Check if user exists
     const res = await pool.query(
@@ -50,13 +54,35 @@ bot.start(async (ctx) => {
           ]),
         );
       } else {
-        await pool.query(
-          `INSERT INTO users (telegram_id, first_name, last_name, username, referred_by, joined_channel)
+        try {
+          await pool.query(
+            `INSERT INTO users (telegram_id, first_name, last_name, username, referred_by, joined_channel)
                      VALUES ($1, $2, $3, $4, $5, $6)
                      ON CONFLICT (telegram_id) DO NOTHING
                      `,
-          [userId, firstName, lastName, username, referrerId, false],
-        );
+            [userId, firstName, lastName, username, referrerId, false],
+          );
+        } catch (err) {
+          // Intercept PostgreSQL Foreign Key Violation (Error Code 23503)
+          if (err instanceof DatabaseError && err.code === "23503") {
+            await ctx.reply(
+              `⚠️ **Invalid Referral Link**\n\nThe referral link you used belongs to an account that is not registered in our system.\n\nPlease request a valid link from your friend, or click the button below to start without a referrer:`,
+              {
+                parse_mode: 'Markdown',
+                ...Markup.inlineKeyboard([
+                  [
+                    Markup.button.url(
+                      "▶️ Continue Without Referrer",
+                      `https://t.me/${ctx.botInfo.username}?start=clean`
+                    ),
+                  ],
+                ]),
+              }
+            );
+            return;
+          }
+          throw err;
+        }
 
         await ctx.reply(
           `👋 Welcome ${displayName}!\n\nPlease join our official Telegram channel to continue:`,
